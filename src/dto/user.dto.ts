@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Language } from "./translate.dto";
-import { IsEmail, IsEnum, IsNotEmpty } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsStrongPassword, Matches, Max, MaxLength, Min, MinLength, Validate } from "class-validator";
 
 export enum UserRoles {
     ADMIN = "admin",
@@ -12,6 +12,8 @@ export class RegisterUserDTO{
         description: "Username of the user",
         example: "onury5506"
     })
+    @MinLength(4)
+    @MaxLength(20)
     @IsNotEmpty()
     username: string;
 
@@ -20,6 +22,8 @@ export class RegisterUserDTO{
         example: "Onur Yıldız"
     })
     @IsNotEmpty()
+    @MinLength(4)
+    @MaxLength(50)
     name: string;
 
     @ApiProperty({
@@ -28,13 +32,23 @@ export class RegisterUserDTO{
     })
     @IsEmail()
     @IsNotEmpty()
+    @MaxLength(50)
     email: string;
 
     @ApiProperty({
         description: "Password of the user",
         example: "password123"
     })
+
     @IsNotEmpty()
+    @MaxLength(20)
+    @IsStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+    })
     password: string;
 
     @ApiProperty({
