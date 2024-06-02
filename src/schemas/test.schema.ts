@@ -1,11 +1,21 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { ApiProperty } from "@nestjs/swagger";
+import { HydratedDocument, Types } from "mongoose";
 
 @Schema()
 export class Test {
+    @ApiProperty()
+    _id: Types.ObjectId;
+
+    @ApiProperty()
+    _v: number;
+    
     @Prop()
+    @ApiProperty()
     name: string;
+
     @Prop()
+    @ApiProperty()
     age: number;
 }
 
