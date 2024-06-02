@@ -3,10 +3,14 @@ import { AppController } from '../controllers/app.controller';
 import { AppService } from '../services/app.service';
 import { TestModule } from './test.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://admin:password@localhost:27017/socialMedia?authSource=admin'),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRoot(process.env.MongoDB_URI),
     TestModule
   ],
   controllers: [AppController],
