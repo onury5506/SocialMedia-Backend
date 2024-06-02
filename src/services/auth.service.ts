@@ -30,11 +30,11 @@ export class AuthService {
             tokenType: 'access_token'
         }
 
-        const accessToken = this.jwtService.sign({
+        const accessToken = "Bearer "+this.jwtService.sign({
             ...payload,
             tokenType: 'access_token'
         }, { expiresIn: '1h' });
-        const refreshToken = this.jwtService.sign({
+        const refreshToken = "Bearer "+this.jwtService.sign({
             ...payload,
             tokenType: 'refresh_token'
         }, { expiresIn: '60 days' });

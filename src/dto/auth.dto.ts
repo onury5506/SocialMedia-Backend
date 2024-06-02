@@ -23,3 +23,7 @@ export class UserTokenDto {
     id: string;
     tokenType: "access_token" | "refresh_token";
 }
+
+export interface RequestWithUser extends Request {
+    userId: string;
+}

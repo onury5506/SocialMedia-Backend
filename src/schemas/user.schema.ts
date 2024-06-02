@@ -8,11 +8,17 @@ import { UserRoles } from "src/dto/user.dto";
     timestamps: true
 })
 export class User {
-    @Prop()
+    @Prop({
+        required: true,
+        index: true,
+    })
     @ApiProperty()
     username: string;
 
-    @Prop()
+    @Prop({
+        required: true,
+        index: true,
+    })
     @ApiProperty()
     name: string;
 
@@ -51,6 +57,32 @@ export class User {
     @Prop()
     @ApiProperty()
     postCount: number;
+}
+
+export class UserProfile {
+    @ApiProperty()
+    name: string;
+
+    @ApiProperty()
+    username: string;
+
+    @ApiProperty()
+    about: string;
+
+    @ApiProperty()
+    profilePicture: string;
+
+    @ApiProperty()
+    followerCount: number;
+
+    @ApiProperty()
+    followingCount: number;
+
+    @ApiProperty()
+    postCount: number;
+
+    @ApiProperty()
+    language: Language;
 }
 
 export type UserDocument = HydratedDocument<User>

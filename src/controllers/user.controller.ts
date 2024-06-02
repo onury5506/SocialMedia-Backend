@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { ApiBasicAuth, ApiBearerAuth, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RequestWithUser } from 'src/dto/auth.dto';
 import { RegisterUserDTO, UserRoles } from 'src/dto/user.dto';
-import { User } from 'src/schemas/user.schema';
+import { JwtGuard } from 'src/guards/jwt.guard';
+import { User, UserProfile } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
 
 @Controller("/user")
@@ -23,5 +25,13 @@ export class UserController {
         }
 
         return this.userService.createUser(newUser);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/me")
+    @ApiResponse({ status: 200, description: "Returns the user profile", type: UserProfile})
+    getProfile(@Request() req: RequestWithUser): Promise<UserProfile> {
+        return this.userService.getUserById(req.userId);
     }
 }
