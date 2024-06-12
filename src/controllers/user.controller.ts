@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiBasicAuth, ApiBearerAuth, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { RegisterUserDTO, UserRoles } from 'src/dto/user.dto';
+import { RegisterUserDTO, UpdateUserAboutDTO, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { User, UserProfile } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
@@ -43,6 +43,14 @@ export class UserController {
     @Get("/me")
     @ApiResponse({ status: 200, description: "Returns the user profile", type: UserProfile})
     getProfile(@Request() req: RequestWithUser): Promise<UserProfile> {
-        return this.userService.getUserById(req.userId);
+        return this.userService.getUserProfileById(req.userId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/me/about")
+    @ApiResponse({ status: 200 })
+    updateUserAbout(@Request() req: RequestWithUser, @Body() about: UpdateUserAboutDTO): Promise<void> {
+        return this.userService.updateUserAbout(req.userId, about.about);
     }
 }

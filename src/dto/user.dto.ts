@@ -59,3 +59,13 @@ export class RegisterUserDTO{
     @IsEnum(Language)
     language: Language;
 }
+
+export class UpdateUserAboutDTO {
+    @ApiProperty({
+        description: "About of the user",
+        example: "I am a software developer"
+    })
+    @IsNotEmpty()
+    @MaxLength(250)
+    about: string;
+}
