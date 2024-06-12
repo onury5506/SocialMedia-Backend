@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
+import { Language, TranslateResultDto } from 'src/dto/translate.dto';
 import { RegisterUserDTO, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { User, UserProfile } from 'src/schemas/user.schema';
@@ -14,11 +15,21 @@ export class UserController {
     @Post("/register")
     @ApiCreatedResponse({ description: "Registers a new user", type: User})
     registerUser(@Body() registerUserDTO: RegisterUserDTO): Promise<User> {
+
+        const about: TranslateResultDto = {
+            originalLanguage: Language.ENGLISH,
+            originalText: "",
+            translations: Object.keys(Language).reduce((acc, lang) => {
+                acc[Language[lang as Language]] = "";
+                return acc;
+            }, {} as {[key in Language]: string})
+        }
+
         let newUser: User = {
             ...registerUserDTO,
             role: UserRoles.USER,
             profilePicture: '',
-            about: '',
+            about,
             followerCount: 0,
             followingCount: 0,
             postCount: 0

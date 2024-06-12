@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import { HydratedDocument, Types } from "mongoose";
-import { Language } from "src/dto/translate.dto";
+import { Language, TranslateResultDto } from "src/dto/translate.dto";
 import { UserRoles } from "src/dto/user.dto";
 
 @Schema({
@@ -40,7 +40,7 @@ export class User {
 
     @Prop()
     @ApiProperty()
-    about: string;
+    about: TranslateResultDto;
 
     @Prop()
     @ApiProperty()
@@ -67,7 +67,7 @@ export class UserProfile {
     username: string;
 
     @ApiProperty()
-    about: string;
+    about: TranslateResultDto;
 
     @ApiProperty()
     profilePicture: string;
