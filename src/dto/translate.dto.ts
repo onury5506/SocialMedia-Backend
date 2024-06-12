@@ -1,3 +1,5 @@
+import { ApiProperty } from "@nestjs/swagger";
+
 export enum Language {
     ENGLISH = "en",
     SPANISH = "es",
@@ -34,7 +36,13 @@ export enum Language {
 export class TranslateResultDto {
     originalText: string;
     originalLanguage: Language;
-    translations: {
-        [key in Language]: string;
-    }
+    @ApiProperty({ 
+        type: "object",
+        example: Object.keys(Language).reduce((acc, lang) => {
+            acc[Language[lang as Language]] = "";
+            return acc;
+        }, {} as {[key in Language]: string}),
+        description: "It contains the translations of the original text in different languages as key-value pairs. The key is the language code and the value is the translated text."
+    })
+    translations: Record<Language, string>;
 }
