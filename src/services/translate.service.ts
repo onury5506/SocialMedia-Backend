@@ -33,22 +33,18 @@ export class TranslateService {
       originalLanguage: language as Language,
       translations: languages.reduce((acc, lang) => {
         if(lang !== language) {
-          acc[lang] = "";
+          acc[Language[lang]] = "";
         }else{
-          acc[lang] = text
+          acc[Language[lang]] = text
         }
         return acc;
       }, {} as {[key in Language]: string})
     }
-    console.log("---1---")
-    console.log(response)
     await Promise.all(languages.map(async lang => {
       if(lang !== language) {
-        response.translations[lang as Language] = await this.translateText(text, Language[lang as Language]);
+        response.translations[Language[lang]] = await this.translateText(text, Language[lang]);
       }
     }))
-    console.log("---2---")
-    console.log(response)
     return response;
   }
 }
