@@ -4,10 +4,12 @@ export enum Language {
     FRENCH = "fr",
     GERMAN = "de",
     ITALIAN = "it",
-    PORTUGUESE = "pt",
+    PORTUGUESE_PORTUGAL = "pt-PT",
+    PORTUGUESE_BRAZIL = "pt-BR",
     RUSSIAN = "ru",
     JAPANESE = "ja",
-    CHINESE = "zh",
+    CHINESE_CHINA = "zh-CN",
+    CHINESE_TAIWAN = "zh-TW",
     KOREAN = "ko",
     ARABIC = "ar",
     HINDI = "hi",
@@ -27,4 +29,12 @@ export enum Language {
     CROATIAN = "hr",
     BOSNIAN = "bs",
     SLOVENIAN = "sl",
+}
+
+export class TranslateResultDto {
+    originalText: string;
+    originalLanguage: Language;
+    translations: {
+        [key in Language]: string;
+    }
 }
