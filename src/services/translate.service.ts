@@ -10,7 +10,7 @@ export class TranslateService {
     private readonly configService: ConfigService
   ) {
     this.translate = new Translate({
-      key: configService.get<string>('GOOLE_API_KEY'),
+      key: configService.get<string>('GOOGLE_API_KEY'),
     })
   }
 
