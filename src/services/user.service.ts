@@ -16,12 +16,12 @@ export class UserService {
     private readonly translateService: TranslateService,
     private readonly storageService: StorageService,
     private readonly mediaService: MediaService
-  ) {}
+  ) { }
 
   async createUser(user: User): Promise<User> {
-    if(await this.userModel.findOne({ email: user.email })) {
+    if (await this.userModel.findOne({ email: user.email })) {
       throw new HttpException('Email already exists', 400);
-    }else if(await this.userModel.findOne({ username : user.username })) {
+    } else if (await this.userModel.findOne({ username: user.username })) {
       throw new HttpException('Username already exists', 400);
     }
 
@@ -34,42 +34,48 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async updateUserAbout(id: string, about: string): Promise<void>{
+  async updateUserAbout(id: string, about: string): Promise<void> {
     const user = await this.getUserById(id);
-    if(!user) {
+    if (!user) {
       throw new HttpException('User not found', 404);
     }
 
     user.about = await this.translateService.translateTextToAllLanguages(about)
 
-    try{
+    try {
       await user.save();
-    }catch(e) {
+    } catch (e) {
       throw new HttpException("Something went wrong!", 500);
     }
   }
 
   async updateUserProfilePicture(id: string, req: UpdateUserProfilePictureDTO): Promise<void> {
     const user = await this.getUserById(id);
-    if(!user) {
+    if (!user) {
       throw new HttpException('User not found', 404);
     }
 
-    const image = await this.mediaService.cropAndResizeImage({
-      file: req.file.buffer,
-      left: req.left,
-      top: req.top,
-      width: req.size,
-      height: req.size,
-      targetHeight: 500,
-      targetWidth: 500
-    })
+    let image = req.file.buffer;
+    try {
+      image = await this.mediaService.cropAndResizeImage({
+        file: req.file.buffer,
+        left: req.left,
+        top: req.top,
+        width: req.size,
+        height: req.size,
+        targetHeight: 500,
+        targetWidth: 500
+      })
+    } catch (e) {
+      throw new HttpException("Invalid image", 400);
+    }
 
-    const path =  `${id}/profilePicture_${Date.now()}.png`
+
+    const path = `${id}/profilePicture_${Date.now()}.png`
 
     await this.storageService.uploadFile(image, path)
 
-    if(user.profilePicture) {
+    if (user.profilePicture) {
       await this.storageService.deleteFile(user.profilePicture)
     }
 
@@ -79,7 +85,7 @@ export class UserService {
 
   async getUserProfileById(id: string): Promise<UserProfile> {
     const res = await this.userModel.findById(id).exec()
-    if(!res) {
+    if (!res) {
       throw new HttpException('User not found', 404);
     }
 
