@@ -3,7 +3,7 @@ import * as sharp from 'sharp';
 import { CropAndResizeImageDto, ImageDimensions } from 'src/dto/image.dto';
 
 @Injectable()
-export class ImageService {
+export class MediaService {
     constructor() {
     }
 
