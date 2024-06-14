@@ -1,13 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument, UserProfile } from 'src/schemas/user.schema';
+import { User, UserProfile } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
 import { UpdateUserProfilePictureDTO } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
-import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
@@ -69,7 +68,6 @@ export class UserService {
     } catch (e) {
       throw new HttpException("Invalid image", 400);
     }
-
 
     const path = `${id}/profilePicture_${Date.now()}.png`
 
