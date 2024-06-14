@@ -4,12 +4,18 @@ import { Model } from 'mongoose';
 import { User, UserDocument, UserProfile } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
+import { UpdateUserProfilePictureDTO } from 'src/dto/user.dto';
+import { StorageService } from './storage.service';
+import { MediaService } from './media.service';
+import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    private readonly translateService: TranslateService
+    private readonly translateService: TranslateService,
+    private readonly storageService: StorageService,
+    private readonly mediaService: MediaService
   ) {}
 
   async createUser(user: User): Promise<User> {
@@ -43,6 +49,34 @@ export class UserService {
     }
   }
 
+  async updateUserProfilePicture(id: string, req: UpdateUserProfilePictureDTO): Promise<void> {
+    const user = await this.getUserById(id);
+    if(!user) {
+      throw new HttpException('User not found', 404);
+    }
+
+    const image = await this.mediaService.cropAndResizeImage({
+      file: req.file.buffer,
+      left: req.left,
+      top: req.top,
+      width: req.size,
+      height: req.size,
+      targetHeight: 500,
+      targetWidth: 500
+    })
+
+    const path =  `${id}/profilePicture_${Date.now()}.png`
+
+    await this.storageService.uploadFile(image, path)
+
+    if(user.profilePicture) {
+      await this.storageService.deleteFile(user.profilePicture)
+    }
+
+    user.profilePicture = path
+    await user.save();
+  }
+
   async getUserProfileById(id: string): Promise<UserProfile> {
     const res = await this.userModel.findById(id).exec()
     if(!res) {
@@ -53,7 +87,7 @@ export class UserService {
       name: res.name,
       username: res.username,
       about: res.about,
-      profilePicture: res.profilePicture,
+      profilePicture: await this.storageService.signCdnUrl(res.profilePicture),
       followerCount: res.followerCount,
       followingCount: res.followingCount,
       postCount: res.postCount,

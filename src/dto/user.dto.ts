@@ -69,3 +69,29 @@ export class UpdateUserAboutDTO {
     @MaxLength(250)
     about: string;
 }
+
+export class UpdateUserProfilePictureDTO {
+    @ApiProperty({
+        type: 'number',
+        description: 'Top offset of the image',
+        example: 0
+    })
+    top: number;
+
+    @ApiProperty({
+        type: 'number',
+        description: 'Left offset of the image',
+        example: 0
+    })
+    left: number;
+
+    @ApiProperty({
+        type: 'number',
+        description: 'Width and height of the image',
+        example: 100
+    })
+    size: number;
+    
+    @ApiProperty({ type: 'string', format: 'binary', required: true })
+    file: Express.Multer.File
+}
