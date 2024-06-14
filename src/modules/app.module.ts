@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user.module';
 import { AuthModule } from './auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { JwtModule } from '@nestjs/jwt';
       signOptions: { expiresIn: '3h' },
       global: true,
     }),
+    ScheduleModule.forRoot(),
     MongooseModule.forRoot(process.env.MongoDB_URI),
     TestModule,
     UserModule,
