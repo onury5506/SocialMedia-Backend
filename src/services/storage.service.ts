@@ -48,7 +48,7 @@ export class StorageService {
         this.accessToken = res.token
     }
 
-    uploadFile(file: Express.Multer.File, path: string): Promise<string> {
+    uploadFile(file: Buffer, path: string): Promise<string> {
         return new Promise((resolve, reject) => {
             const bucket = this.storage.bucket(this.bucketName)
             const blob = bucket.file(path)
@@ -61,8 +61,12 @@ export class StorageService {
             blobStream.on('finish', () => {
                 resolve(path)
             })
-            blobStream.end(file.buffer)
+            blobStream.end(file)
         })
+    }
+
+    deleteFile(path: string) {
+        return this.storage.bucket(this.bucketName).file(path).delete()
     }
 
     async signUrl(path: string): Promise<string> {
@@ -79,7 +83,7 @@ export class StorageService {
     signCdnUrl(path: string) {
         const expiration = Math.round(new Date().getTime()/1000) + 3600;
 
-        const urlToSign = `${this.cdnUrl}${path}?Expires=${expiration}&KeyName=${this.cdnKeyName}`
+        const urlToSign = `${this.cdnUrl}/${path}?Expires=${expiration}&KeyName=${this.cdnKeyName}`
         const hmac = crypto.createHmac('sha1', this.cdnKey)
         const signature = hmac.update(urlToSign).digest()
         const encodedSignature = UrlSafeBase64.encode(signature.toString("base64"))
