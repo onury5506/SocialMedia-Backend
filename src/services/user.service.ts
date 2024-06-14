@@ -62,8 +62,8 @@ export class UserService {
         top: req.top,
         width: req.size,
         height: req.size,
-        targetHeight: 500,
-        targetWidth: 500
+        targetHeight: 300,
+        targetWidth: 300
       })
     } catch (e) {
       throw new HttpException("Invalid image", 400);
