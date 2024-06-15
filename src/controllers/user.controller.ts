@@ -1,4 +1,4 @@
-import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Put, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
@@ -49,7 +49,7 @@ export class UserController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
-    @Post("/me/about")
+    @Put("/me/about")
     @ApiResponse({ status: 200 })
     updateUserAbout(@Request() req: RequestWithUser, @Body() about: UpdateUserAboutDTO) {
         return this.userService.updateUserAbout(req.userId, about.about);
@@ -59,7 +59,7 @@ export class UserController {
     @ApiBearerAuth("JwtGuard")
     @ApiConsumes('multipart/form-data')
     @UseInterceptors(FileInterceptor('file'))
-    @Post("/me/profilePicture")
+    @Put("/me/profilePicture")
     updateProfilePicture(@Request() req: RequestWithUser, @Body() updateUserProfilePictureDTO: UpdateUserProfilePictureDTO,
         @UploadedFile(
             new ParseFilePipe({
