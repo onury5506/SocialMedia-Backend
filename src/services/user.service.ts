@@ -1,17 +1,19 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserProfile } from 'src/schemas/user.schema';
+import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { UpdateUserProfilePictureDTO } from 'src/dto/user.dto';
+import { MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
+import { Follow } from 'src/schemas/follow.schema';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Follow.name) private followModel: Model<Follow>,
     private readonly translateService: TranslateService,
     private readonly storageService: StorageService,
     private readonly mediaService: MediaService
@@ -100,6 +102,7 @@ export class UserService {
     }
 
     return {
+      id: res._id.toHexString(),
       name: res.name,
       username: res.username,
       about: res.about,
@@ -109,5 +112,108 @@ export class UserService {
       postCount: res.postCount,
       language: res.language
     }
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    return !!(await this.followModel.findOne({ follower: followerId, following: followingId }).exec());
+  }
+
+  private async setProfilePicture(res: Object & { profilePicture: string }) {
+    if (res.profilePicture) {
+      res.profilePicture = await this.storageService.signCdnUrl(res.profilePicture)
+    }
+  }
+
+  private async setFollowing(queryOwnerId: string, res:  Object & { following:boolean, id: string }) {
+    res.following = await this.isFollowing(queryOwnerId, res.id)
+  }
+
+  async getFollowers(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+    const pageSize = 12;
+    const followers = await this.followModel.find({ following: id })
+      .populate('follower')
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .exec();
+
+    return await Promise.all(
+      followers.map(async f => {
+        const res = {
+          id: f.follower._id.toHexString(),
+          name: f.follower.name,
+          profilePicture: f.follower.profilePicture,
+          following: false
+        }
+
+        await Promise.all([
+          this.setProfilePicture(res),
+          this.setFollowing(queryOwnerId, res)
+        ])
+
+        return res;
+      })
+    )
+  }
+
+  async getFollowings(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+    const pageSize = 12;
+    const following = await this.followModel.find({ follower: id })
+      .populate('following')
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .exec();
+
+    return await Promise.all(
+      following.map(async f => {
+        const res = {
+          id: f.following._id.toHexString(),
+          name: f.following.name,
+          profilePicture: f.following.profilePicture,
+          following: false
+        }
+
+        await Promise.all([
+          this.setProfilePicture(res),
+          this.setFollowing(queryOwnerId, res)
+        ])
+
+        return res;
+      })
+    )
+  }
+
+  async followUser(followerId: string, followingId: string): Promise<void> {
+    if (followerId === followingId) {
+      throw new HttpException('followUser.error.cannotFollowSelf', 400);
+    }
+
+    if (await this.followModel.findOne({ follower: followerId, following: followingId })) {
+      throw new HttpException('followUser.error.alreadyFollowing', 400);
+    }
+
+    const follow = new this.followModel({ follower: followerId, following: followingId });
+
+    await Promise.all([
+      follow.save(),
+      this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } }).exec(),
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec()
+    ]);
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    if (followerId === followingId) {
+      throw new HttpException('unfollowUser.error.cannotUnfollowSelf', 400);
+    }
+
+    const follow = await this.followModel.findOne({ follower: followerId, following: followingId });
+    if (!follow) {
+      throw new HttpException('unfollowUser.error.notFollowing', 400);
+    }
+
+    await Promise.all([
+      this.followModel.findByIdAndDelete(follow._id).exec(),
+      this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } }).exec(),
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec()
+    ])
   }
 }

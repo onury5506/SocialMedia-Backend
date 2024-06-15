@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Language } from "./translate.dto";
+import { Language, TranslateResultDto } from "./translate.dto";
 import { IsEmail, IsEnum, IsNotEmpty, IsStrongPassword, Matches, Max, MaxLength, Min, MinLength, Validate } from "class-validator";
 
 export enum UserRoles {
@@ -94,4 +94,57 @@ export class UpdateUserProfilePictureDTO {
     
     @ApiProperty({ type: 'string', format: 'binary', required: true })
     file: Express.Multer.File
+}
+
+export class UserProfile {
+    @ApiProperty()
+    id: string;
+    
+    @ApiProperty()
+    name: string;
+
+    @ApiProperty()
+    username: string;
+
+    @ApiProperty()
+    about: TranslateResultDto;
+
+    @ApiProperty()
+    profilePicture: string;
+
+    @ApiProperty()
+    followerCount: number;
+
+    @ApiProperty()
+    followingCount: number;
+
+    @ApiProperty()
+    postCount: number;
+
+    @ApiProperty()
+    language: Language;
+}
+
+export class MiniUserProfile {
+    @ApiProperty()
+    id: string;
+
+    @ApiProperty()
+    name: string;
+
+    @ApiProperty()
+    profilePicture: string;
+
+    @ApiProperty()
+    following: boolean;
+}
+
+export class FollowUserDTO {
+    @ApiProperty()
+    id: string;
+}
+
+export class UnfollowUserDto {
+    @ApiProperty()
+    id: string;
 }

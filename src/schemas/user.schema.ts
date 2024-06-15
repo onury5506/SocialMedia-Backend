@@ -51,32 +51,14 @@ export class User {
     @Prop()
     @ApiProperty()
     postCount: number;
-}
 
-export class UserProfile {
+    @Prop()
     @ApiProperty()
-    name: string;
+    createdAt?: Date;
 
+    @Prop()
     @ApiProperty()
-    username: string;
-
-    @ApiProperty()
-    about: TranslateResultDto;
-
-    @ApiProperty()
-    profilePicture: string;
-
-    @ApiProperty()
-    followerCount: number;
-
-    @ApiProperty()
-    followingCount: number;
-
-    @ApiProperty()
-    postCount: number;
-
-    @ApiProperty()
-    language: Language;
+    updatedAt?: Date;
 }
 
 export type UserDocument = HydratedDocument<User>

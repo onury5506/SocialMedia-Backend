@@ -1,11 +1,11 @@
-import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, ParseFilePipe, Post, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { RegisterUserDTO, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserRoles } from 'src/dto/user.dto';
+import { FollowUserDTO, MiniUserProfile, RegisterUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfile, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
-import { User, UserProfile } from 'src/schemas/user.schema';
+import { User } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
 
 @Controller("/user")
@@ -92,5 +92,45 @@ export class UserController {
             ...updateUserProfilePictureDTO,
             file
         })
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/followers/:id/:page")
+    @ApiResponse({ status: 200, type: [MiniUserProfile] })
+    getFollowers(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
+        if(page < 1){
+            page = 1;
+        }
+
+        return this.userService.getFollowers(req.userId, id, page);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/followings/:id/:page")
+    @ApiResponse({ status: 200, type: [MiniUserProfile] })
+    getFollowings(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
+        if(page < 1){
+            page = 1;
+        }
+
+        return this.userService.getFollowings(req.userId, id, page);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/follow")
+    @ApiResponse({ status: 200 })
+    followUser(@Request() req: RequestWithUser, @Body() follow: FollowUserDTO) {
+        return this.userService.followUser(req.userId, follow.id);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/unfollow")
+    @ApiResponse({ status: 200 })
+    unfollowUser(@Request() req: RequestWithUser, @Body() unfollow: UnfollowUserDto) {
+        return this.userService.unfollowUser(req.userId, unfollow.id);
     }
 }
