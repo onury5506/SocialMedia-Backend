@@ -19,9 +19,9 @@ export class UserService {
 
   async createUser(user: User): Promise<User> {
     if (await this.userModel.findOne({ email: user.email })) {
-      throw new HttpException('Email already exists', 400);
+      throw new HttpException('register.error.emailAlreadyExists', 400);
     } else if (await this.userModel.findOne({ username: user.username })) {
-      throw new HttpException('Username already exists', 400);
+      throw new HttpException('register.error.usernameAlreadyExists', 400);
     }
 
     user.password = await bcrypt.hash(user.password, 10)
@@ -36,7 +36,7 @@ export class UserService {
   async updateUserAbout(id: string, about: string): Promise<void> {
     const user = await this.getUserById(id);
     if (!user) {
-      throw new HttpException('User not found', 404);
+      throw new HttpException('updateUser.error.userNotFound', 404);
     }
 
     user.about = await this.translateService.translateTextToAllLanguages(about)
@@ -44,14 +44,14 @@ export class UserService {
     try {
       await user.save();
     } catch (e) {
-      throw new HttpException("Something went wrong!", 500);
+      throw new HttpException("updateUser.error.somethingWentWrong", 500);
     }
   }
 
   async updateUserProfilePicture(id: string, req: UpdateUserProfilePictureDTO): Promise<void> {
     const user = await this.getUserById(id);
     if (!user) {
-      throw new HttpException('User not found', 404);
+      throw new HttpException('updateUser.error.userNotFound', 404);
     }
 
     let image = req.file.buffer;
@@ -66,25 +66,37 @@ export class UserService {
         targetWidth: 300
       })
     } catch (e) {
-      throw new HttpException("Invalid image", 400);
+      throw new HttpException("updateUser.error.invalidImage", 400);
     }
 
     const path = `${id}/profilePicture_${Date.now()}.png`
 
-    await this.storageService.uploadFile(image, path)
+    try {
+      await this.storageService.uploadFile(image, path)
+    } catch (e) {
+      throw new HttpException("updateUser.error.somethingWentWrong", 500);
+    }
+
+
 
     if (user.profilePicture) {
-      await this.storageService.deleteFile(user.profilePicture)
+      this.storageService.deleteFile(user.profilePicture).catch(e => { })
     }
 
     user.profilePicture = path
-    await user.save();
+    try {
+      await user.save();
+    } catch (e) {
+      this.storageService.deleteFile(path).catch(e => { })
+      throw new HttpException("updateUser.error.somethingWentWrong", 500);
+    }
+
   }
 
   async getUserProfileById(id: string): Promise<UserProfile> {
     const res = await this.userModel.findById(id).exec()
     if (!res) {
-      throw new HttpException('User not found', 404);
+      throw new HttpException('findUser.error.userNotFound', 404);
     }
 
     return {

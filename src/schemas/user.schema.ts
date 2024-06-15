@@ -8,17 +8,11 @@ import { UserRoles } from "src/dto/user.dto";
     timestamps: true
 })
 export class User {
-    @Prop({
-        required: true,
-        index: true,
-    })
+    @Prop()
     @ApiProperty()
     username: string;
 
-    @Prop({
-        required: true,
-        index: true,
-    })
+    @Prop()
     @ApiProperty()
     name: string;
 
@@ -88,3 +82,6 @@ export class UserProfile {
 export type UserDocument = HydratedDocument<User>
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.index({ username: 1, email: 1 }, { unique: true });
+UserSchema.index({ name: 1 });
