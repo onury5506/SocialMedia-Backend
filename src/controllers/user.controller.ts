@@ -1,10 +1,13 @@
 import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Put, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
-import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Time } from 'src/constants/timeConstants';
+import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
 import { FollowUserDTO, MiniUserProfile, RegisterUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfile, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
+import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
 
@@ -97,6 +100,8 @@ export class UserController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/followers/:id/:page")
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(30 * Time.Minute)
     @ApiResponse({ status: 200, type: [MiniUserProfile] })
     getFollowers(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){
@@ -109,6 +114,8 @@ export class UserController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/followings/:id/:page")
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(30 * Time.Minute)
     @ApiResponse({ status: 200, type: [MiniUserProfile] })
     getFollowings(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){

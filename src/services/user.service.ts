@@ -8,6 +8,7 @@ import { MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/d
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
+import { CacheService } from './cache.service';
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,8 @@ export class UserService {
     @InjectModel(Follow.name) private followModel: Model<Follow>,
     private readonly translateService: TranslateService,
     private readonly storageService: StorageService,
-    private readonly mediaService: MediaService
+    private readonly mediaService: MediaService,
+    private readonly cacheService: CacheService,
   ) { }
 
   async createUser(user: User): Promise<User> {
@@ -196,8 +198,10 @@ export class UserService {
     await Promise.all([
       follow.save(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec()
-    ]);
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec(),
+      this.cacheService.del(`/user/followers/${followingId}/*`),
+      this.cacheService.del(`/user/followings/${followerId}/*`)
+    ])
   }
 
   async unfollowUser(followerId: string, followingId: string): Promise<void> {
@@ -213,7 +217,9 @@ export class UserService {
     await Promise.all([
       this.followModel.findByIdAndDelete(follow._id).exec(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec()
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec(),
+      this.cacheService.del(`/user/followers/${followingId}/*`),
+      this.cacheService.del(`/user/followings/${followerId}/*`)
     ])
   }
 }
