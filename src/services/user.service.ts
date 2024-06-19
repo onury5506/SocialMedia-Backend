@@ -216,9 +216,7 @@ export class UserService {
     await Promise.all([
       follow.save(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec(),
-      this.cacheService.del(`/user/followers/${followingId}/*`),
-      this.cacheService.del(`/user/followings/${followerId}/*`)
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec()
     ])
   }
 
@@ -235,9 +233,7 @@ export class UserService {
     await Promise.all([
       this.followModel.findByIdAndDelete(follow._id).exec(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec(),
-      this.cacheService.del(`/user/followers/${followingId}/*`),
-      this.cacheService.del(`/user/followings/${followerId}/*`)
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec()
     ])
   }
 

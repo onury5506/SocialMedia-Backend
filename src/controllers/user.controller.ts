@@ -100,8 +100,6 @@ export class UserController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/followers/:id/:page")
-    @UseInterceptors(CacheInterceptor)
-    @CacheTTL(30 * Time.Minute)
     @ApiResponse({ status: 200, type: [MiniUserProfile] })
     getFollowers(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){
@@ -114,8 +112,6 @@ export class UserController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/followings/:id/:page")
-    @UseInterceptors(CacheInterceptor)
-    @CacheTTL(30 * Time.Minute)
     @ApiResponse({ status: 200, type: [MiniUserProfile] })
     getFollowings(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){
