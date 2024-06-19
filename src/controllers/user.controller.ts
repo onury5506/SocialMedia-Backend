@@ -5,7 +5,7 @@ import { Time } from 'src/constants/timeConstants';
 import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { FollowUserDTO, MiniUserProfile, RegisterUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfile, UserRoles } from 'src/dto/user.dto';
+import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfile, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
@@ -139,5 +139,29 @@ export class UserController {
     @ApiResponse({ status: 200 })
     unfollowUser(@Request() req: RequestWithUser, @Body() unfollow: UnfollowUserDto) {
         return this.userService.unfollowUser(req.userId, unfollow.id);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/block")
+    @ApiResponse({ status: 200 })
+    blockUser(@Request() req: RequestWithUser, @Body() block: BlockUserDTO) {
+        return this.userService.blockUser(req.userId, block.id);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/unblock")
+    @ApiResponse({ status: 200 })
+    unblockUser(@Request() req: RequestWithUser, @Body() unblock: UnblockUserDTO) {
+        return this.userService.unblockUser(req.userId, unblock.id);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/block/:userId")
+    @ApiResponse({ status: 200, type: IsBlockedDTO })
+    isBlocked(@Request() req: RequestWithUser, @Param("userId") userId: string): Promise<IsBlockedDTO> {
+        return this.userService.isBlocked(req.userId, userId);
     }
 }

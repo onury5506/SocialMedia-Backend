@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserController } from 'src/controllers/user.controller';
+import { Block, BlockSchema } from 'src/schemas/block.schema';
 import { Follow, FollowSchema } from 'src/schemas/follow.schema';
 import { User, UserSchema } from 'src/schemas/user.schema';
 import { CacheService } from 'src/services/cache.service';
@@ -14,6 +15,7 @@ import { UserService } from 'src/services/user.service';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Follow.name, schema: FollowSchema },
+      { name: Block.name, schema: BlockSchema },
     ])
   ],
   controllers: [UserController],

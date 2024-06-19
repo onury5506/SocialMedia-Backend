@@ -148,3 +148,18 @@ export class UnfollowUserDto {
     @ApiProperty()
     id: string;
 }
+
+export class BlockUserDTO {
+    @ApiProperty()
+    id: string;
+}
+
+export class UnblockUserDTO {
+    @ApiProperty()
+    id: string;
+}
+
+export class IsBlockedDTO{
+    user1BlockedUser2: boolean;
+    user2BlockedUser1: boolean;
+}

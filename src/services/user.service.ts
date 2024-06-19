@@ -4,17 +4,20 @@ import { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
+import { IsBlockedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
 import { CacheService } from './cache.service';
+import { Block } from 'src/schemas/block.schema';
+import { Time } from 'src/constants/timeConstants';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Follow.name) private followModel: Model<Follow>,
+    @InjectModel(Block.name) private blockModel: Model<Block>,
     private readonly translateService: TranslateService,
     private readonly storageService: StorageService,
     private readonly mediaService: MediaService,
@@ -126,11 +129,16 @@ export class UserService {
     }
   }
 
-  private async setFollowing(queryOwnerId: string, res:  Object & { following:boolean, id: string }) {
+  private async setFollowing(queryOwnerId: string, res: Object & { following: boolean, id: string }) {
     res.following = await this.isFollowing(queryOwnerId, res.id)
   }
 
   async getFollowers(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+    const isBlocked = await this.isBlocked(queryOwnerId, id)
+    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+      throw new HttpException('getFollowers.error.cannotGetFollowersBlockedUser', 400);
+    }
+
     const pageSize = 12;
     const followers = await this.followModel.find({ following: id })
       .populate('follower')
@@ -158,6 +166,11 @@ export class UserService {
   }
 
   async getFollowings(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+    const isBlocked = await this.isBlocked(queryOwnerId, id)
+    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+      throw new HttpException('getFollowings.error.cannotGetFollowingsBlockedUser', 400);
+    }
+
     const pageSize = 12;
     const following = await this.followModel.find({ follower: id })
       .populate('following')
@@ -187,6 +200,11 @@ export class UserService {
   async followUser(followerId: string, followingId: string): Promise<void> {
     if (followerId === followingId) {
       throw new HttpException('followUser.error.cannotFollowSelf', 400);
+    }
+
+    const isBlocked = await this.isBlocked(followerId, followingId)
+    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+      throw new HttpException('followUser.error.cannotFollowBlockedUser', 400);
     }
 
     if (await this.followModel.findOne({ follower: followerId, following: followingId })) {
@@ -221,5 +239,75 @@ export class UserService {
       this.cacheService.del(`/user/followers/${followingId}/*`),
       this.cacheService.del(`/user/followings/${followerId}/*`)
     ])
+  }
+
+  async isBlocked(userId1: string, userId2: string): Promise<IsBlockedDTO> {
+
+    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(userId1, userId2)}`;
+    const cached = await this.cacheService.get<IsBlockedDTO>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const [block1, block2] = await Promise.all([
+      this.blockModel.findOne({ blocker: userId1, blocked: userId2 }).exec(),
+      this.blockModel.findOne({ blocker: userId2, blocked: userId1 }).exec()
+    ]);
+
+    const res = {
+      user1BlockedUser2: !!block1,
+      user2BlockedUser1: !!block2
+    }
+
+    this.cacheService.set(cacheKey, res, 30 * Time.Minute).catch(e => { });
+
+    return res
+  }
+
+  async blockUser(blockerId: string, blockedId: string): Promise<void> {
+    if (blockerId === blockedId) {
+      throw new HttpException('blockUser.error.cannotBlockSelf', 400);
+    }
+
+    if (await this.blockModel.findOne({ blocker: blockerId, blocked: blockedId })) {
+      throw new HttpException('blockUser.error.alreadyBlocked', 400);
+    }
+
+    const block = new this.blockModel({ blocker: blockerId, blocked: blockedId });
+
+    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(blockerId, blockedId)}`;
+
+    await Promise.all([
+      block.save(),
+      this.unfollowUser(blockerId, blockedId).catch(e => { }),
+      this.unfollowUser(blockedId, blockerId).catch(e => { }),
+      this.cacheService.del(cacheKey),
+    ])
+  }
+
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    if (blockerId === blockedId) {
+      throw new HttpException('unblockUser.error.cannotUnblockSelf', 400);
+    }
+
+    const block = await this.blockModel.findOne({ blocker: blockerId, blocked: blockedId });
+    if (!block) {
+      throw new HttpException('unblockUser.error.notBlocked', 400);
+    }
+
+    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(blockerId, blockedId)}`;
+
+    await Promise.all([
+      this.blockModel.findByIdAndDelete(block._id).exec(),
+      this.cacheService.del(cacheKey),
+    ]);
+  }
+
+  generateUniqKeyForTwoUsers(userId1: string, userId2: string): string {
+    if (userId1 > userId2) {
+      return `${userId1}_${userId2}`
+    }
+
+    return `${userId2}_${userId1}`
   }
 }
