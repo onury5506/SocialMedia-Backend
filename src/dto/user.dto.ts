@@ -96,7 +96,7 @@ export class UpdateUserProfilePictureDTO {
     file: Express.Multer.File
 }
 
-export class UserProfile {
+export class UserProfileDTO {
     @ApiProperty()
     id: string;
     
@@ -123,6 +123,11 @@ export class UserProfile {
 
     @ApiProperty()
     language: Language;
+}
+
+export class UserProfileWithRelationDTO extends UserProfileDTO {
+    followStatus: IsFollowedDTO;
+    blockStatus: IsBlockedDTO;
 }
 
 export class MiniUserProfile {

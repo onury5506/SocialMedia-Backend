@@ -5,7 +5,7 @@ import { Time } from 'src/constants/timeConstants';
 import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserRoles } from 'src/dto/user.dto';
+import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserProfileWithRelationDTO, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
@@ -44,9 +44,33 @@ export class UserController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
+    @Get("/profile/:id")
+    @ApiResponse({ status: 200, type: UserProfileWithRelationDTO })
+    async getProfile(@Request() req: RequestWithUser, @Param("id") id: string): Promise<UserProfileWithRelationDTO> {
+        const userId = req.userId;
+
+        const [
+            profile,
+            isFollowed,
+            isBlocked
+        ] = await Promise.all([
+            this.userService.getUserProfileById(id),
+            this.userService.isFollowed(userId, id),
+            this.userService.isBlocked(userId, id)
+        ]);
+
+        return {
+            ...profile,
+            followStatus: isFollowed,
+            blockStatus: isBlocked
+        }
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
     @Get("/me")
     @ApiResponse({ status: 200, description: "Returns the user profile", type: UserProfileDTO })
-    getProfile(@Request() req: RequestWithUser): Promise<UserProfileDTO> {
+    getMe(@Request() req: RequestWithUser): Promise<UserProfileDTO> {
         return this.userService.getUserProfileById(req.userId);
     }
 
