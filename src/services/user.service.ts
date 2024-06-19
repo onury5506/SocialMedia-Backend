@@ -254,48 +254,28 @@ export class UserService {
   }
 
   async isFollowed(userId1: string, userId2: string): Promise<IsFollowedDTO> {
-    const cacheKey = `follow/${this.generateUniqKeyForTwoUsers(userId1, userId2)}`;
-    const cached = await this.cacheService.get<IsFollowedDTO>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
     const [follow1, follow2] = await Promise.all([
       this.isFollowing(userId1, userId2),
       this.isFollowing(userId2, userId1)
     ]);
 
-    const res = {
+    return {
       user1FollowedUser2: !!follow1,
       user2FollowedUser1: !!follow2
     }
-
-    this.cacheService.set(cacheKey, res, 30 * Time.Minute).catch(e => { });
-
-    return res
   }
 
   async isBlocked(userId1: string, userId2: string): Promise<IsBlockedDTO> {
-
-    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(userId1, userId2)}`;
-    const cached = await this.cacheService.get<IsBlockedDTO>(cacheKey);
-    if (cached) {
-      return cached;
-    }
 
     const [block1, block2] = await Promise.all([
       this.blockModel.findOne({ blocker: userId1, blocked: userId2 }).exec(),
       this.blockModel.findOne({ blocker: userId2, blocked: userId1 }).exec()
     ]);
 
-    const res = {
+    return {
       user1BlockedUser2: !!block1,
       user2BlockedUser1: !!block2
     }
-
-    this.cacheService.set(cacheKey, res, 30 * Time.Minute).catch(e => { });
-
-    return res
   }
 
   async blockUser(blockerId: string, blockedId: string): Promise<void> {
@@ -309,13 +289,10 @@ export class UserService {
 
     const block = new this.blockModel({ blocker: blockerId, blocked: blockedId });
 
-    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(blockerId, blockedId)}`;
-
     await Promise.all([
       block.save(),
       this.unfollowUser(blockerId, blockedId).catch(e => { }),
       this.unfollowUser(blockedId, blockerId).catch(e => { }),
-      this.cacheService.del(cacheKey),
       this.cacheService.del(`user/${blockerId}`),
       this.cacheService.del(`user/${blockedId}`),
     ])
@@ -331,11 +308,8 @@ export class UserService {
       throw new HttpException('unblockUser.error.notBlocked', 400);
     }
 
-    const cacheKey = `block/${this.generateUniqKeyForTwoUsers(blockerId, blockedId)}`;
-
     await Promise.all([
       this.blockModel.findByIdAndDelete(block._id).exec(),
-      this.cacheService.del(cacheKey),
     ]);
   }
 
