@@ -16,10 +16,6 @@ export class CacheService {
             password: this.configService.get<string>("REDIS_PASSWORD")
         })
 
-        this.client.on('connect', () => {
-            console.log('Redis client connected');
-        });
-
         this.client.connect();
     }
 
