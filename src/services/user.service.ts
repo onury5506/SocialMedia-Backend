@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
+import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfileDTO } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
@@ -49,6 +49,7 @@ export class UserService {
     user.about = await this.translateService.translateTextToAllLanguages(about)
 
     try {
+      this.cacheService.del(`user/${id}`).catch(e => { });
       await user.save();
     } catch (e) {
       throw new HttpException("updateUser.error.somethingWentWrong", 500);
@@ -92,6 +93,7 @@ export class UserService {
 
     user.profilePicture = path
     try {
+      this.cacheService.del(`user/${id}`).catch(e => { });
       await user.save();
     } catch (e) {
       this.storageService.deleteFile(path).catch(e => { })
@@ -100,13 +102,19 @@ export class UserService {
 
   }
 
-  async getUserProfileById(id: string): Promise<UserProfile> {
+  async getUserProfileById(id: string): Promise<UserProfileDTO> {
     const res = await this.userModel.findById(id).exec()
     if (!res) {
       throw new HttpException('findUser.error.userNotFound', 404);
     }
 
-    return {
+    const cacheKey = `user/${id}`;
+    const cached = await this.cacheService.get<UserProfileDTO>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const profile:UserProfileDTO = {
       id: res._id.toHexString(),
       name: res.name,
       username: res.username,
@@ -117,6 +125,10 @@ export class UserService {
       postCount: res.postCount,
       language: res.language
     }
+
+    this.cacheService.set(cacheKey, profile, 30 * Time.Minute).catch(e => { });
+
+    return profile;
   }
 
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
@@ -216,7 +228,9 @@ export class UserService {
     await Promise.all([
       follow.save(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec()
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: 1 } }).exec(),
+      this.cacheService.del(`user/${followerId}`),
+      this.cacheService.del(`user/${followingId}`),
     ])
   }
 
@@ -233,7 +247,9 @@ export class UserService {
     await Promise.all([
       this.followModel.findByIdAndDelete(follow._id).exec(),
       this.userModel.findByIdAndUpdate(followerId, { $inc: { followingCount: -1 } }).exec(),
-      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec()
+      this.userModel.findByIdAndUpdate(followingId, { $inc: { followerCount: -1 } }).exec(),
+      this.cacheService.del(`user/${followerId}`),
+      this.cacheService.del(`user/${followingId}`),
     ])
   }
 
@@ -245,8 +261,8 @@ export class UserService {
     }
 
     const [follow1, follow2] = await Promise.all([
-      this.followModel.findOne({ follower: userId1, following: userId2 }).exec(),
-      this.followModel.findOne({ follower: userId2, following: userId1 }).exec()
+      this.isFollowing(userId1, userId2),
+      this.isFollowing(userId2, userId1)
     ]);
 
     const res = {
@@ -300,6 +316,8 @@ export class UserService {
       this.unfollowUser(blockerId, blockedId).catch(e => { }),
       this.unfollowUser(blockedId, blockerId).catch(e => { }),
       this.cacheService.del(cacheKey),
+      this.cacheService.del(`user/${blockerId}`),
+      this.cacheService.del(`user/${blockedId}`),
     ])
   }
 
