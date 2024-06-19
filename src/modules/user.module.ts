@@ -4,11 +4,11 @@ import { UserController } from 'src/controllers/user.controller';
 import { Block, BlockSchema } from 'src/schemas/block.schema';
 import { Follow, FollowSchema } from 'src/schemas/follow.schema';
 import { User, UserSchema } from 'src/schemas/user.schema';
-import { StorageService } from 'src/services/storage.service';
 import { TranslateService } from 'src/services/translate.service';
 import { UserService } from 'src/services/user.service';
 import { MediaModule } from './media.module';
 import { CacheModule } from './cache.module';
+import { StorageModule } from './storage.module';
 
 @Module({
   imports: [
@@ -19,12 +19,12 @@ import { CacheModule } from './cache.module';
     ]),
     MediaModule,
     CacheModule,
+    StorageModule,
   ],
   controllers: [UserController],
   providers: [
     UserService,
     TranslateService,
-    StorageService
   ],
 })
 export class UserModule { }
