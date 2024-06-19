@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { LoginDto, LoginResponseDto } from 'src/dto/auth.dto';
+import { LoginDto, LoginResponseDto, RefreshDTO } from 'src/dto/auth.dto';
 import { AuthService } from 'src/services/auth.service';
 
 @Controller("/auth")
@@ -11,5 +11,10 @@ export class AuthController {
     @Post("/login")
     login(@Body() loginDTO: LoginDto): Promise<LoginResponseDto> {
         return this.authService.login(loginDTO);
+    }
+
+    @Post("/refresh")
+    refresh(@Body() refreshDTO: RefreshDTO): Promise<LoginResponseDto> {
+        return this.authService.refresh(refreshDTO.refreshToken);
     }
 }

@@ -19,6 +19,10 @@ export class LoginResponseDto {
     refreshToken: string;
 }
 
+export class RefreshDTO {
+    refreshToken: string;
+}
+
 export class UserTokenDto {
     id: string;
     tokenType: "access_token" | "refresh_token";
