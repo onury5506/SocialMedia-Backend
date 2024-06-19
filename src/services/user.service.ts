@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { IsBlockedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
+import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfile } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
@@ -239,6 +239,28 @@ export class UserService {
       this.cacheService.del(`/user/followers/${followingId}/*`),
       this.cacheService.del(`/user/followings/${followerId}/*`)
     ])
+  }
+
+  async isFollowed(userId1: string, userId2: string): Promise<IsFollowedDTO> {
+    const cacheKey = `follow/${this.generateUniqKeyForTwoUsers(userId1, userId2)}`;
+    const cached = await this.cacheService.get<IsFollowedDTO>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const [follow1, follow2] = await Promise.all([
+      this.followModel.findOne({ follower: userId1, following: userId2 }).exec(),
+      this.followModel.findOne({ follower: userId2, following: userId1 }).exec()
+    ]);
+
+    const res = {
+      user1FollowedUser2: !!follow1,
+      user2FollowedUser1: !!follow2
+    }
+
+    this.cacheService.set(cacheKey, res, 30 * Time.Minute).catch(e => { });
+
+    return res
   }
 
   async isBlocked(userId1: string, userId2: string): Promise<IsBlockedDTO> {

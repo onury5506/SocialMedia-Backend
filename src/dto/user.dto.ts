@@ -149,6 +149,11 @@ export class UnfollowUserDto {
     id: string;
 }
 
+export class IsFollowedDTO {
+    user1FollowedUser2: boolean;
+    user2FollowedUser1: boolean;
+}
+
 export class BlockUserDTO {
     @ApiProperty()
     id: string;
