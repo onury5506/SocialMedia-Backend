@@ -33,8 +33,9 @@ export class CacheService {
         return res ? JSON.parse(res) as T : null;
     }
 
-    public del(key: string): Promise<any> {
-        return this.client.del(key);
+    public async del(prefix: string): Promise<any> {
+        const keys = await this.client.keys(prefix);
+        return this.client.del(keys);
     }
 
     public isExist(key: string): Promise<boolean> {
