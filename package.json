@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@google-cloud/pubsub": "^4.5.0",
     "@google-cloud/storage": "^7.11.2",
     "@google-cloud/translate": "^8.3.0",
     "@google-cloud/video-transcoder": "^3.3.0",
