@@ -24,10 +24,6 @@ export class MediaService {
         this.bucketName = this.configService.get<string>("BUCKET_NAME")
         this.location = this.configService.get<string>("GOOGLE_TRANSCODER_LOCATION")
         this.projectId = this.configService.get<string>("GOOGLE_PROJECT_ID")
-
-        this.transcodeVideo("1.mp4", "").then(console.log).catch((e)=>console.log(e)) 
-
-        console.log("MediaService initialized")
     }
 
     cropAndResizeImage(request: CropAndResizeImageDto): Promise<Buffer> {
