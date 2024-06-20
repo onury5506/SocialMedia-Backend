@@ -25,7 +25,7 @@ export class MediaService {
         this.location = this.configService.get<string>("GOOGLE_TRANSCODER_LOCATION")
         this.projectId = this.configService.get<string>("GOOGLE_PROJECT_ID")
 
-        this.transcodeVideo("2.mp4", "").then(console.log).catch((e)=>console.log(e)) 
+        this.transcodeVideo("1.mp4", "").then(console.log).catch((e)=>console.log(e)) 
 
         console.log("MediaService initialized")
     }
@@ -58,11 +58,9 @@ export class MediaService {
         })
     }
 
-    async transcodeVideo(inputUri: string, outputUri: string) {
+    async transcodeVideo(inputUri: string, outputUri: string, maxVideoDuration = 90) {
         const url = await this.storageService.signUrl(inputUri)
         const videoMetadata = await this.getVideoMetadata(url)
-
-        console.log(videoMetadata)
 
         let ratio = videoMetadata.width / videoMetadata.height
         let width = 1280
@@ -103,6 +101,25 @@ export class MediaService {
             })
         }
 
+        let editList: google.cloud.video.transcoder.v1.IEditAtom[] | undefined = undefined
+
+        if(videoMetadata.duration > maxVideoDuration) {
+            editList = [
+                {
+                    key: "video",
+                    inputs: [
+                        "input0",
+                    ],
+                    endTimeOffset: {
+                        seconds: maxVideoDuration
+                    },
+                    startTimeOffset: {
+                        seconds: 0
+                    }
+                }
+            ]
+        }
+
         return this.transcoderServiceClient.createJob({
             parent: this.transcoderServiceClient.locationPath(this.projectId, this.location),
             job: {
@@ -112,11 +129,12 @@ export class MediaService {
                     elementaryStreams,
                     muxStreams: [
                         {
-                            key: "sd",
+                            key: "video",
                             container: "mp4",
                             elementaryStreams: videoMetadata.hasAudio ? ["video-stream", "audio-stream"] : ["video-stream"]
                         }
                     ],
+                    editList
                 }
             }
         })
