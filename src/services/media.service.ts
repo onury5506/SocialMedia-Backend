@@ -6,6 +6,7 @@ import { CropAndResizeImageDto, Dimensions, VideoMetadata } from 'src/dto/media.
 import { StorageService } from './storage.service';
 import * as ffmpeg from 'fluent-ffmpeg'
 import { google } from '@google-cloud/video-transcoder/build/protos/protos';
+import { PubSub } from '@google-cloud/pubsub';
 
 @Injectable()
 export class MediaService {
@@ -130,7 +131,10 @@ export class MediaService {
                             elementaryStreams: videoMetadata.hasAudio ? ["video-stream", "audio-stream"] : ["video-stream"]
                         }
                     ],
-                    editList
+                    editList,
+                    pubsubDestination: {
+                        "topic":process.env.GOOGLE_TRANSCODER_PUBSUB_TOPIC_NAME
+                    }
                 }
             }
         })
