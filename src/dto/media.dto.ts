@@ -8,7 +8,12 @@ export class CropAndResizeImageDto {
     targetHeight: number;
 }
 
-export class ImageDimensions {
+export class Dimensions {
     width: number;
     height: number;
+}
+
+export class VideoMetadata extends Dimensions {
+    duration: number;
+    hasAudio: boolean;
 }

@@ -1,10 +1,33 @@
+import { TranscoderServiceClient } from '@google-cloud/video-transcoder/build/src/v1/transcoder_service_client';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as sharp from 'sharp';
-import { CropAndResizeImageDto, ImageDimensions } from 'src/dto/image.dto';
+import { CropAndResizeImageDto, Dimensions, VideoMetadata } from 'src/dto/media.dto';
+import { StorageService } from './storage.service';
+import * as ffmpeg from 'fluent-ffmpeg'
+import { google } from '@google-cloud/video-transcoder/build/protos/protos';
 
 @Injectable()
 export class MediaService {
-    constructor() {
+    private transcoderServiceClient: TranscoderServiceClient
+    private bucketName: string
+    private location: string
+    private projectId: string
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly storageService: StorageService
+    ) {
+        this.transcoderServiceClient = new TranscoderServiceClient({
+            keyFilename: this.configService.get<string>("GOOGLE_KEY_FILE_PATH")
+        });
+
+        this.bucketName = this.configService.get<string>("BUCKET_NAME")
+        this.location = this.configService.get<string>("GOOGLE_TRANSCODER_LOCATION")
+        this.projectId = this.configService.get<string>("GOOGLE_PROJECT_ID")
+
+        this.transcodeVideo("2.mp4", "").then(console.log).catch((e)=>console.log(e)) 
+
+        console.log("MediaService initialized")
     }
 
     cropAndResizeImage(request: CropAndResizeImageDto): Promise<Buffer> {
@@ -15,8 +38,87 @@ export class MediaService {
             .toBuffer()
     }
 
-    async getImageDimensions(img: Buffer): Promise<ImageDimensions> {
+    async getImageDimensions(img: Buffer): Promise<Dimensions> {
         const { width, height } = await sharp(img).metadata()
         return { width, height }
+    }
+
+    async getVideoMetadata(videoUri: string): Promise<VideoMetadata> {
+        return new Promise((resolve, reject) => {
+            ffmpeg.ffprobe(videoUri, (err, metadata) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    const { width, height } = metadata.streams[0]
+                    const duration = metadata.format.duration
+                    const hasAudio = metadata.streams.some((stream: any) => stream.codec_type === "audio")
+                    resolve({ width, height, duration, hasAudio })
+                }
+            })
+        })
+    }
+
+    async transcodeVideo(inputUri: string, outputUri: string) {
+        const url = await this.storageService.signUrl(inputUri)
+        const videoMetadata = await this.getVideoMetadata(url)
+
+        console.log(videoMetadata)
+
+        let ratio = videoMetadata.width / videoMetadata.height
+        let width = 1280
+        let height = Math.round(width / ratio)
+        
+        if(videoMetadata.height > videoMetadata.width) {
+            height = 1280
+            width = Math.round(height * ratio)
+        }
+
+        if(width % 2 !== 0) width--
+        if(height % 2 !== 0) height--
+
+        const elementaryStreams: google.cloud.video.transcoder.v1.IElementaryStream[] = [
+            {
+                key: "video-stream",
+                videoStream: {
+                    h264: {
+                        frameRate: 30,
+                        widthPixels: width,
+                        heightPixels: height,
+                        allowOpenGop: true,
+                        bitrateBps: 2000000
+                    }
+                }
+            }
+        ]
+
+        if(videoMetadata.hasAudio) {
+            elementaryStreams.push({
+                key: "audio-stream",
+                audioStream: {
+                    codec: "aac",
+                    bitrateBps: 64000,
+                    channelCount: 2,
+                    sampleRateHertz: 44100
+                }
+            })
+        }
+
+        return this.transcoderServiceClient.createJob({
+            parent: this.transcoderServiceClient.locationPath(this.projectId, this.location),
+            job: {
+                inputUri: `gs://${this.bucketName}/${inputUri}`,
+                outputUri: `gs://${this.bucketName}/${outputUri}`,
+                config: {
+                    elementaryStreams,
+                    muxStreams: [
+                        {
+                            key: "sd",
+                            container: "mp4",
+                            elementaryStreams: videoMetadata.hasAudio ? ["video-stream", "audio-stream"] : ["video-stream"]
+                        }
+                    ],
+                }
+            }
+        })
     }
 }
