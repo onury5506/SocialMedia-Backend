@@ -65,6 +65,11 @@ export class StorageService {
         })
     }
 
+    downloadFile(path: string): Promise<Buffer> {
+        return this.storage.bucket(this.bucketName).file(path).download()
+            .then(res => res[0])
+    }
+
     deleteFile(path: string) {
         return this.storage.bucket(this.bucketName).file(path).delete()
     }
