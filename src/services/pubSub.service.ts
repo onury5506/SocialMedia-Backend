@@ -13,8 +13,8 @@ export class PubSubService {
     })
   }
 
-  subscribe<T>(topicName: string, subscriptionName: string, callback: (message: T) => void) {
-    const subscription = this.client.topic(topicName).subscription(subscriptionName)
+  subscribe<T>(subscriptionName: string, callback: (message: T) => void) {
+    const subscription = this.client.subscription(subscriptionName)
     subscription.on('message', async (message) => {
       const data = JSON.parse(message.data.toString())
       callback(data)
