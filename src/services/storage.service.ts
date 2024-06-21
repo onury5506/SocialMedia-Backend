@@ -6,6 +6,7 @@ import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import * as UrlSafeBase64 from 'url-safe-base64';
+import { TimeMs } from 'src/constants/timeConstants';
 
 @Injectable()
 export class StorageService {
@@ -94,6 +95,23 @@ export class StorageService {
         const encodedSignature = UrlSafeBase64.encode(signature.toString("base64"))
         
         return `${urlToSign}&Signature=${encodedSignature}`
+    }
+
+    async signUrlToUpload(path: string, mimeType: string, maxFileSize: number): Promise<string> {
+        const expires = Date.now() + TimeMs.Minute * 10
+
+        const res = await this.storage.bucket(this.bucketName).file(path).getSignedUrl({
+            version: 'v4',
+            action: 'write',
+            expires,
+            contentType: mimeType,
+            extensionHeaders: {
+                'x-goog-content-length-range': `0,${maxFileSize}`
+            },
+            
+        })
+
+        return res[0]
     }
 
     async invalidateCache(path: string): Promise<void> {
