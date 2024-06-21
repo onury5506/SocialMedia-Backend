@@ -1,6 +1,7 @@
 import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Put, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Size } from 'src/constants/fileSizeConstans';
 import { Time } from 'src/constants/timeConstants';
 import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
@@ -92,7 +93,7 @@ export class UserController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({
-                        maxSize: 10 * 1024 * 1024,
+                        maxSize: 10 * Size.megabyte,
                         message: "File size must be less than 10MB"
                     }),
                     new FileTypeValidator({
