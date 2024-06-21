@@ -55,9 +55,16 @@ export class MediaService {
         })
     }
 
-    async transcodeVideo(inputUri: string, outputUri: string, maxVideoDuration = 90) {
+    async transcodeVideo(inputUri: string, maxVideoDuration = 90) {
         const url = await this.storageService.signUrl(inputUri)
         const videoMetadata = await this.getVideoMetadata(url)
+
+        const inputParts = inputUri.split("/")
+        inputParts.pop()
+        let outputUri = inputParts.join("/")
+        if(!outputUri.endsWith("/") && outputUri.length){
+            outputUri += "/"
+        }
 
         let ratio = videoMetadata.width / videoMetadata.height
         let width = 1280
@@ -126,7 +133,7 @@ export class MediaService {
                     elementaryStreams,
                     muxStreams: [
                         {
-                            key: "video",
+                            key: "edited_video",
                             container: "mp4",
                             elementaryStreams: videoMetadata.hasAudio ? ["video-stream", "audio-stream"] : ["video-stream"]
                         }
