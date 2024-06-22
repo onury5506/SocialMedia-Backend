@@ -52,6 +52,9 @@ export class Post {
     deleted: boolean;
 
     @Prop()
+    publishedAt: Date;
+
+    @Prop()
     @ApiProperty()
     createdAt?: Date;
 
@@ -64,4 +67,4 @@ export type PostDocument = HydratedDocument<Post>
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-PostSchema.index({ user: 1, createdAt: -1, postStatus: 1, hashtags: 1});
+PostSchema.index({ user: 1, publishedAt: -1, postStatus: 1, hashtags: 1});
