@@ -52,13 +52,14 @@ export class AuthService {
 
     async refresh(refreshToken: string): Promise<LoginResponseDto> {
         const token = refreshToken.split(' ').pop();
-        const isRefreshTokenValid = await this.cacheService.isExist(`refresh_token/${token}`);
-        if (!isRefreshTokenValid) {
-            throw new NotFoundException('auth.refresh.invalid_refresh_token');
-        }
 
         const payload = this.jwtService.verify(token);
         if (payload.tokenType !== 'refresh_token') {
+            throw new NotFoundException('auth.refresh.invalid_refresh_token');
+        }
+
+        const isRefreshTokenValid = await this.cacheService.isExist(`refresh_token/${payload?.id}/${token}`);
+        if (!isRefreshTokenValid) {
             throw new NotFoundException('auth.refresh.invalid_refresh_token');
         }
 
@@ -81,7 +82,7 @@ export class AuthService {
             tokenType: 'refresh_token'
         }, { expiresIn: '60 days' });
 
-        this.cacheService.set(`refresh_token/${newPayload.id}/${newRefreshToken.split(' ')[1]}`, true, 60 * Time.Day);
+        this.cacheService.set(`refresh_token/${newPayload.id}/${newRefreshToken.split(' ').pop()}`, true, 60 * Time.Day);
         this.cacheService.del(`refresh_token/${newPayload.id}/${token}`);
 
         return {
