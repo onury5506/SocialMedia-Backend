@@ -6,7 +6,7 @@ import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import * as UrlSafeBase64 from 'url-safe-base64';
-import { TimeMs } from 'src/constants/timeConstants';
+import { Time, TimeMs } from 'src/constants/timeConstants';
 
 @Injectable()
 export class StorageService {
@@ -86,8 +86,8 @@ export class StorageService {
         return res[0]
     }
 
-    signCdnUrl(path: string) {
-        const expiration = Math.round(new Date().getTime()/1000) + 3600;
+    signCdnUrl(path: string, expireSeconds: number = Time.Hour) {
+        const expiration = Math.round(new Date().getTime()/1000) + expireSeconds;
 
         const urlToSign = `${this.cdnUrl}/${path}?Expires=${expiration}&KeyName=${this.cdnKeyName}`
         const hmac = crypto.createHmac('sha1', this.cdnKey)
