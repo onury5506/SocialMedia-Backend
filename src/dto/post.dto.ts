@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Size } from "src/constants/fileSizeConstans";
+import { TranslateResultDto } from "./translate.dto";
 
 export enum PostType {
     IMAGE = 'image',
@@ -48,3 +49,34 @@ export class VideoTranscodeTaskData {
 }
 
 export const MaxHashtags = 3;
+
+export class PostStaticDataDto {
+    id: string;
+    user: string;
+    postType: PostType;
+    postStatus: PostStatus;
+    content: TranslateResultDto;
+    hashtags: string[];
+    url: string;
+    publishedAt: Date;
+}
+
+export class PostDynamicDataDto {
+    likes: number;
+    comments: number;
+    views: number;
+}
+
+export class PostDataDto implements PostStaticDataDto, PostDynamicDataDto {
+    id: string;
+    user: string;
+    postType: PostType;
+    postStatus: PostStatus;
+    content: TranslateResultDto;
+    hashtags: string[];
+    url: string;
+    publishedAt: Date;
+    likes: number;
+    comments: number;
+    views: number;
+}

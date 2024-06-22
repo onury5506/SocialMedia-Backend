@@ -4,7 +4,7 @@ import { PubSubService } from './pubSub.service';
 import { StorageService } from './storage.service';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
-import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes, PostMimeType, PostMimeTypeToPostType, PostStatus, PostType, VideoTranscodeTaskData } from 'src/dto/post.dto';
+import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes, PostDataDto, PostDynamicDataDto, PostMimeType, PostMimeTypeToPostType, PostStaticDataDto, PostStatus, PostType, VideoTranscodeTaskData } from 'src/dto/post.dto';
 import { TranslateService } from './translate.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, mongo } from 'mongoose';
@@ -34,6 +34,10 @@ export class PostService {
         this.pubSubService.subscribe(this.configService.get<string>("GOOGLE_TRANSCODER_PUBSUB_SUBSCRIPTION_NAME"), this.whenVideoTranscoded)
     }
 
+    wait(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     private async whenFileUploaded(message: StorageFileUploadedDto) {
         const filePath = message.name
         if (filePath.endsWith("/")) {
@@ -46,8 +50,6 @@ export class PostService {
         }
 
         const [userId, postId, fileName] = fileParts
-
-        console.log({ userId, postId, fileName })
 
         if (this.videoTypes.some(type => fileName === type)) {
             try {
@@ -212,5 +214,71 @@ export class PostService {
         const signedUrl = await this.storageService.signUrlToUpload(filePath, createPost.postMimeType, createPost.size)
 
         return { signedUrl }
+    }
+
+    private async getPostStaticData(postId: string): Promise<PostStaticDataDto> {
+        const cacheKey = `post/static/${postId}`
+
+        const cachedData = await this.cacheService.get<PostStaticDataDto>(cacheKey)
+
+        if (cachedData) {
+            return cachedData
+        }
+
+        const post = await this.postModel.findOne({ _id: postId })
+
+        if (!post) {
+            throw new HttpException("Post not found", 404)
+        }
+
+        const staticData = {
+            id: post._id.toHexString(),
+            user: post.user as any as string,
+            postType: post.postType,
+            postStatus: post.postStatus,
+            content: post.content,
+            hashtags: post.hashtags,
+            url: this.storageService.signCdnUrl(post.url, Time.Day + Time.Hour),
+            publishedAt: post.publishedAt,
+        }
+
+        await this.cacheService.set(cacheKey, staticData, Time.Day)
+
+        return staticData
+    }
+
+    private async getPostDynamicData(postId: string): Promise<PostDynamicDataDto> {
+        const cacheKey = `post/dynamic/${postId}`
+
+        const cachedData = await this.cacheService.get<PostDynamicDataDto>(cacheKey)
+
+        if (cachedData) {
+            return cachedData
+        }
+
+        const post = await this.postModel.findOne({ _id: postId }, { likes: 1, comments: 1, views: 1 })
+
+        if (!post) {
+            throw new HttpException("Post not found", 404)
+        }
+
+        const dynamicData = {
+            likes: post.likes,
+            comments: post.comments,
+            views: post.views,
+        }
+
+        await this.cacheService.set(cacheKey, dynamicData, Time.Day)
+
+        return dynamicData
+    }
+
+    public async getPost(postId: string): Promise<PostDataDto> {
+        const [staticData, dynamicData] = await Promise.all([
+            this.getPostStaticData(postId),
+            this.getPostDynamicData(postId)
+        ])
+
+        return { ...staticData, ...dynamicData }
     }
 }
