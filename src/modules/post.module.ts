@@ -6,6 +6,9 @@ import { User, UserSchema } from 'src/schemas/user.schema';
 import { PostService } from 'src/services/post.service';
 import { MediaModule } from './media.module';
 import { CacheModule } from './cache.module';
+import { PubSubModule } from './pubSub.module';
+import { StorageModule } from './storage.module';
+import { TranslateModule } from './translate.modulte';
 
 @Module({
     imports: [
@@ -15,6 +18,9 @@ import { CacheModule } from './cache.module';
         ]),
         MediaModule,
         CacheModule,
+        PubSubModule,
+        StorageModule,
+        TranslateModule,
     ],
     controllers: [PostController],
     providers: [PostService],
