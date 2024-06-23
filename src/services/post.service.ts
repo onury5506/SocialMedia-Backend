@@ -137,12 +137,12 @@ export class PostService {
         const hashtags: { [key: string]: any } = {}
 
         languages.forEach(lang => {
-            const regex = /(?:^|\s)(?<hashtag>#[^\s]+)/gm
+            const regex = /(?:^|\s)(?<hashtag>#[\p{L}\p{N}_]+)/gmu
             const text = content.translations[lang]
             let match = regex.exec(text)
 
             for (let i = 0; match != null && i < MaxHashtags; i++) {
-                const hashtag = match.groups.hashtag
+                const hashtag = (match.groups.hashtag).toLowerCase()
                 hashtags[hashtag] = true
                 match = regex.exec(text)
             }
