@@ -281,4 +281,20 @@ export class PostService {
 
         return { ...staticData, ...dynamicData }
     }
+
+    public async deletePost(userId: string, postId: string): Promise<void> {
+        const post = await this.postModel.findOne({ _id: postId, user: userId })
+
+        if (!post) {
+            throw new HttpException("Post not found", 404)
+        }
+
+        post.deleted = true
+
+        await Promise.all([
+            post.save(),
+            this.cacheService.del(`post/static/${postId}`),
+            this.cacheService.del(`post/dynamic/${postId}`)
+        ])
+    }
 }

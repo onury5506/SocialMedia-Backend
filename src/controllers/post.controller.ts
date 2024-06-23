@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Request, Get, Param, HttpException } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Request, Get, Param, HttpException, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto } from 'src/dto/post.dto';
@@ -34,5 +34,12 @@ export class PostController {
         }
 
         return post;
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Delete("/:postId")
+    async deletePost(@Request() req: RequestWithUser, @Param("postId") postId: string): Promise<void>{
+        await this.postService.deletePost(req.userId, postId);
     }
 }
