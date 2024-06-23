@@ -94,6 +94,7 @@ export class UserService {
     user.profilePicture = path
     try {
       this.cacheService.del(`user/${id}`).catch(e => { });
+      this.cacheService.del(`userProfilePicture/${id}`).catch(e => { });
       await user.save();
     } catch (e) {
       this.storageService.deleteFile(path).catch(e => { })
@@ -119,7 +120,7 @@ export class UserService {
       name: res.name,
       username: res.username,
       about: res.about,
-      profilePicture: await this.storageService.signCdnUrl(res.profilePicture),
+      profilePicture: await this.getUserProfilePicture(id),
       followerCount: res.followerCount,
       followingCount: res.followingCount,
       postCount: res.postCount,
@@ -131,13 +132,32 @@ export class UserService {
     return profile;
   }
 
+  async getUserProfilePicture(id: string): Promise<string> {
+    const cacheKey = `userProfilePicture/${id}`;
+    const cached = await this.cacheService.get<string>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const res = await this.userModel.findById(id,{profilePicture:1}).exec()
+    if (!res) {
+      throw new HttpException('findUser.error.userNotFound', 404);
+    }
+
+    const profilePicture = res.profilePicture ? await this.storageService.signCdnUrl(res.profilePicture) : "";
+    this.cacheService.set(cacheKey, profilePicture, Time.Hour).catch(e => { });
+
+    return profilePicture;
+  }
+
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
     return !!(await this.followModel.findOne({ follower: followerId, following: followingId }).exec());
   }
 
-  private async setProfilePicture(res: Object & { profilePicture: string }) {
-    if (res.profilePicture) {
-      res.profilePicture = await this.storageService.signCdnUrl(res.profilePicture)
+  private async setProfilePicture(res: Object & { id: string, profilePicture: string}) {
+    if (res.id) {
+      res.profilePicture = await this.getUserProfilePicture(res.id)
     }
   }
 
