@@ -27,5 +27,8 @@ import { TranslateModule } from './translate.modulte';
   providers: [
     UserService,
   ],
+  exports: [
+    UserService,
+  ]
 })
 export class UserModule { }
