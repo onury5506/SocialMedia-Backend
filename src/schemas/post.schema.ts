@@ -67,4 +67,5 @@ export type PostDocument = HydratedDocument<Post>
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-PostSchema.index({ user: 1, publishedAt: -1, postStatus: 1, hashtags: 1, deleted: 1});
+PostSchema.index({ user: 1, publishedAt: -1, postStatus: 1, deleted: 1});
+PostSchema.index({ hashtags: 1, publishedAt: -1, postStatus: 1, deleted: 1});
