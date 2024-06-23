@@ -1,13 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Language, TranslateResultDto } from "./translate.dto";
-import { IsEmail, IsEnum, IsNotEmpty, IsStrongPassword, Matches, Max, MaxLength, Min, MinLength, Validate } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsStrongPassword, MaxLength, MinLength } from "class-validator";
+import { IsObjectId } from "class-validator-mongo-object-id";
 
 export enum UserRoles {
     ADMIN = "admin",
     USER = "user"
 }
 
-export class RegisterUserDTO{
+export class RegisterUserDTO {
     @ApiProperty({
         description: "Username of the user",
         example: "onury5506"
@@ -91,7 +92,7 @@ export class UpdateUserProfilePictureDTO {
         example: 100
     })
     size: number;
-    
+
     @ApiProperty({ type: 'string', format: 'binary', required: true })
     file: Express.Multer.File
 }
@@ -99,7 +100,7 @@ export class UpdateUserProfilePictureDTO {
 export class UserProfileDTO {
     @ApiProperty()
     id: string;
-    
+
     @ApiProperty()
     name: string;
 
@@ -146,11 +147,13 @@ export class MiniUserProfile {
 
 export class FollowUserDTO {
     @ApiProperty()
+    @IsObjectId()
     id: string;
 }
 
 export class UnfollowUserDto {
     @ApiProperty()
+    @IsObjectId()
     id: string;
 }
 
@@ -161,15 +164,17 @@ export class IsFollowedDTO {
 
 export class BlockUserDTO {
     @ApiProperty()
+    @IsObjectId()
     id: string;
 }
 
 export class UnblockUserDTO {
     @ApiProperty()
+    @IsObjectId()
     id: string;
 }
 
-export class IsBlockedDTO{
+export class IsBlockedDTO {
     user1BlockedUser2: boolean;
     user2BlockedUser1: boolean;
 }

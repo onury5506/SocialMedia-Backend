@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Size } from "src/constants/fileSizeConstans";
 import { TranslateResultDto } from "./translate.dto";
 import { IsObjectId } from "class-validator-mongo-object-id";
+import { IsNotEmpty, MinLength, MaxLength, IsEnum } from "class-validator";
 
 export enum PostType {
     IMAGE = 'image',
@@ -34,8 +35,15 @@ export const PostMimeTypeToPostType = {
 };
 
 export class CreatePostRequestDto {
+    @IsNotEmpty()
+    @MinLength(1)
+    @MaxLength(500)
     content: string;
+
+    @IsEnum(PostMimeType)
     postMimeType: PostMimeType;
+
+    @IsNotEmpty()
     size: number;
 }
 
