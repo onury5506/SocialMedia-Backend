@@ -40,4 +40,8 @@ export class CacheService {
     public isExist(key: string): Promise<boolean> {
         return this.client.exists(key).then(res => res === 1);
     }
+
+    public getClient(): RedisClientType {
+        return this.client;
+    }
 }
