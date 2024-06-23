@@ -66,4 +66,9 @@ export class PostLikeService {
             this.cacheService.del(`post/dynamic/${likedPost}`),
         ]) 
     }
+
+    async isUserLikedPost(likedBy: string, likedPost: string): Promise<boolean> {
+        const likedBefore = await this.postLikeModel.findOne({ likedBy, likedPost },{_id:1}).exec();
+        return !!likedBefore;
+    }
 }
