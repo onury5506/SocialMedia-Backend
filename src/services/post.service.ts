@@ -225,7 +225,7 @@ export class PostService {
             return cachedData
         }
 
-        const post = await this.postModel.findOne({ _id: postId })
+        const post = await this.postModel.findOne({ _id: postId, deleted:false, postStatus:PostStatus.PUBLISHED })
 
         if (!post) {
             throw new HttpException("Post not found", 404)
@@ -256,7 +256,7 @@ export class PostService {
             return cachedData
         }
 
-        const post = await this.postModel.findOne({ _id: postId }, { likes: 1, comments: 1, views: 1 })
+        const post = await this.postModel.findOne({ _id: postId, deleted:false, postStatus:PostStatus.PUBLISHED }, { likes: 1, comments: 1, views: 1 })
 
         if (!post) {
             throw new HttpException("Post not found", 404)
