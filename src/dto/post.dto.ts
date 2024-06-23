@@ -88,6 +88,7 @@ export class PostDataDto implements PostStaticDataDto, PostDynamicDataDto {
     likes: number;
     comments: number;
     views: number;
+    liked: boolean;
 }
 
 export class ViewPostDto {

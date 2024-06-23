@@ -11,6 +11,8 @@ import { Model, mongo } from 'mongoose';
 import { Post as PostModel } from 'src/schemas/post.schema';
 import { Time, TimeMs } from 'src/constants/timeConstants';
 import { TranslateResultDto } from 'src/dto/translate.dto';
+import { PostLikeService } from './postLike.service';
+import { UserService } from './user.service';
 
 @Injectable()
 export class PostService {
@@ -26,6 +28,8 @@ export class PostService {
         private readonly storageService: StorageService,
         private readonly cacheService: CacheService,
         private readonly translateService: TranslateService,
+        private readonly postLikeService: PostLikeService,
+        private readonly userService: UserService,
     ) {
         this.whenFileUploaded = this.whenFileUploaded.bind(this);
         this.whenVideoTranscoded = this.whenVideoTranscoded.bind(this);
@@ -276,13 +280,22 @@ export class PostService {
         return dynamicData
     }
 
-    public async getPost(postId: string): Promise<PostDataDto> {
-        const [staticData, dynamicData] = await Promise.all([
+    public async getPost(userId:string, postId: string): Promise<PostDataDto> {
+        const [staticData, dynamicData, liked] = await Promise.all([
             this.getPostStaticData(postId),
-            this.getPostDynamicData(postId)
+            this.getPostDynamicData(postId),
+            this.postLikeService.isUserLikedPost(userId, postId)
         ])
 
-        return { ...staticData, ...dynamicData }
+        const post:PostDataDto = { ...staticData, ...dynamicData, liked }
+
+        const isBlocked = await this.userService.isBlocked(userId, post.user);
+
+        if(isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+            throw new HttpException("getPost.error.userBlocked", 403);
+        }
+
+        return post
     }
 
     public async deletePost(userId: string, postId: string): Promise<void> {

@@ -56,14 +56,6 @@ export class PostController {
     @ApiBearerAuth("JwtGuard")
     @Get("/:postId")
     async getPost(@Request() req: RequestWithUser, @Param("postId") postId:string): Promise<PostDataDto>{
-        const post = await this.postService.getPost(postId);
-
-        const isBlocked = await this.userService.isBlocked(req.userId, post.user);
-
-        if(isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
-            throw new HttpException("getPost.error.userBlocked", 403);
-        }
-
-        return post;
+        return await this.postService.getPost(req.userId, postId);
     }
 }
