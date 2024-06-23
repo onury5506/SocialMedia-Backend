@@ -19,8 +19,12 @@ export class CacheService {
         this.client.connect();
     }
 
-    public async set(key: string, value: any, expire?: number): Promise<any> {
+    public set(key: string, value: any, expire?: number): Promise<any> {
         return this.client.set(key, JSON.stringify(value), expire ? { EX: expire } : undefined);
+    }
+
+    public incr(key: string): Promise<number> {
+        return this.client.incr(key);
     }
 
     public async get<T>(key: string): Promise<T | null> {
