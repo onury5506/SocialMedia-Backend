@@ -9,7 +9,7 @@ import { TranslateService } from './translate.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, mongo } from 'mongoose';
 import { Post as PostModel } from 'src/schemas/post.schema';
-import { Time } from 'src/constants/timeConstants';
+import { Time, TimeMs } from 'src/constants/timeConstants';
 import { TranslateResultDto } from 'src/dto/translate.dto';
 
 @Injectable()
@@ -29,9 +29,12 @@ export class PostService {
     ) {
         this.whenFileUploaded = this.whenFileUploaded.bind(this);
         this.whenVideoTranscoded = this.whenVideoTranscoded.bind(this);
+        this.updatePostViewsCron = this.updatePostViewsCron.bind(this);
 
         this.pubSubService.subscribe(this.configService.get<string>("GOOGLE_STORAGE_PUBSUB_SUBSCRIPTION_NAME"), this.whenFileUploaded)
         this.pubSubService.subscribe(this.configService.get<string>("GOOGLE_TRANSCODER_PUBSUB_SUBSCRIPTION_NAME"), this.whenVideoTranscoded)
+
+        this.updatePostViewsCron()
     }
 
     wait(ms: number) {
@@ -296,5 +299,56 @@ export class PostService {
             this.cacheService.del(`post/static/${postId}`),
             this.cacheService.del(`post/dynamic/${postId}`)
         ])
+    }
+
+    public async  viewPost(userId:string, postId: string): Promise<void> {
+        const userViewedCacheKey = `post/viewed/${userId}/${postId}`
+        if(await this.cacheService.isExist(userViewedCacheKey)){
+            return;
+        }
+
+        await this.getPostDynamicData(postId)
+
+        const cacheKey = `post/viewCount/${postId}`
+        await Promise.all([
+            this.cacheService.incr(cacheKey),
+            this.cacheService.set(userViewedCacheKey, true, Time.Day)
+        ])
+    }
+
+    private async updatePostViews(postId: string): Promise<void> {
+        const cacheKey = `post/viewCount/${postId}`
+        const views = await this.cacheService.get<number>(cacheKey)
+
+        if (views) {
+            const dynamicDataCacheKey = `post/dynamic/${postId}`
+            await Promise.all([
+                this.postModel.updateOne({ _id: postId }, { $inc: { views: views } }),
+                this.cacheService.del(cacheKey),
+                this.cacheService.del(dynamicDataCacheKey)
+            ])
+        }
+    }
+
+    private async updatePostViewsCron(): Promise<void> {
+        const prefix = "post/viewCount/*"
+        const keys = await this.cacheService.getKeys(prefix)
+        const waitList: Promise<void>[] = []
+
+        for(let i=0; i<keys.length; i++){
+            const key = keys[i]
+            const postId = key.split("/")[2]
+            waitList.push(this.updatePostViews(postId))
+            if(i % 10 === 0){
+                await Promise.all(waitList).catch(() => {})
+                waitList.length = 0
+            }
+        }
+
+        if(waitList.length > 0){
+            await Promise.all(waitList).catch(() => {})
+        }
+
+        setTimeout(this.updatePostViewsCron, TimeMs.Minute * 30)
     }
 }

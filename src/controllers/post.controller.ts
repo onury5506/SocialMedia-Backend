@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards, Request, Get, Param, HttpException, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
-import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto } from 'src/dto/post.dto';
+import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, ViewPostDto } from 'src/dto/post.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { PostService } from 'src/services/post.service';
 import { UserService } from 'src/services/user.service';
@@ -23,6 +23,21 @@ export class PostController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
+    @Delete("/:postId")
+    async deletePost(@Request() req: RequestWithUser, @Param("postId") postId: string): Promise<void>{
+        await this.postService.deletePost(req.userId, postId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/view")
+    async viewPost(@Request() req: RequestWithUser, @Body() viewPost: ViewPostDto): Promise<void>{
+        console.log(viewPost);
+        return this.postService.viewPost(req.userId, viewPost.postId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
     @Get("/:postId")
     async getPost(@Request() req: RequestWithUser, @Param("postId") postId:string): Promise<PostDataDto>{
         const post = await this.postService.getPost(postId);
@@ -34,12 +49,5 @@ export class PostController {
         }
 
         return post;
-    }
-
-    @UseGuards(JwtGuard)
-    @ApiBearerAuth("JwtGuard")
-    @Delete("/:postId")
-    async deletePost(@Request() req: RequestWithUser, @Param("postId") postId: string): Promise<void>{
-        await this.postService.deletePost(req.userId, postId);
     }
 }

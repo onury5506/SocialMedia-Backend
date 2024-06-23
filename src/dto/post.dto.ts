@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Size } from "src/constants/fileSizeConstans";
 import { TranslateResultDto } from "./translate.dto";
+import { IsObjectId } from "class-validator-mongo-object-id";
 
 export enum PostType {
     IMAGE = 'image',
@@ -79,4 +80,9 @@ export class PostDataDto implements PostStaticDataDto, PostDynamicDataDto {
     likes: number;
     comments: number;
     views: number;
+}
+
+export class ViewPostDto {
+    @IsObjectId()
+    postId: string;
 }
