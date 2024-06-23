@@ -33,6 +33,10 @@ export class CacheService {
         return res ? JSON.parse(res) as T : null;
     }
 
+    public getKeys(prefix: string): Promise<string[]> {
+        return this.client.keys(prefix);
+    }
+
     public async del(prefix: string): Promise<any> {
         const keys = await this.client.keys(prefix);
         if(keys.length === 0){
