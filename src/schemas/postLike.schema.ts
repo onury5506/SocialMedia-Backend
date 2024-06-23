@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import { User, UserDocument } from "./user.schema";
 import mongoose, { HydratedDocument } from "mongoose";
-import { Post } from "./post.schema";
+import { Post, PostDocument } from "./post.schema";
 
 @Schema({
     timestamps: true
@@ -20,7 +20,7 @@ export class PostLike {
         ref: Post.name
     })
     @ApiProperty()
-    likedPost: UserDocument;
+    likedPost: PostDocument;
 
     @Prop()
     @ApiProperty()
