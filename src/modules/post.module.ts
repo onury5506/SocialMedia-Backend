@@ -9,6 +9,7 @@ import { CacheModule } from './cache.module';
 import { PubSubModule } from './pubSub.module';
 import { StorageModule } from './storage.module';
 import { TranslateModule } from './translate.modulte';
+import { UserModule } from './user.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { TranslateModule } from './translate.modulte';
         PubSubModule,
         StorageModule,
         TranslateModule,
+        UserModule,
     ],
     controllers: [PostController],
     providers: [PostService],
