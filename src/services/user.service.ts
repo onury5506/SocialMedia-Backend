@@ -36,7 +36,7 @@ export class UserService {
     return newUser.save();
   }
 
-  async getUserById(id: string) {
+  getUserById(id: string) {
     return this.userModel.findById(id).exec();
   }
 
