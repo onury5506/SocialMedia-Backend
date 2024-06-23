@@ -10,12 +10,15 @@ import { PubSubModule } from './pubSub.module';
 import { StorageModule } from './storage.module';
 import { TranslateModule } from './translate.modulte';
 import { UserModule } from './user.module';
+import { PostLikeService } from 'src/services/postLike.service';
+import { PostLike, PostLikeSchema } from 'src/schemas/postLike.schema';
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
-            { name: Post.name, schema: PostSchema }
+            { name: Post.name, schema: PostSchema },
+            { name: PostLike.name, schema: PostLikeSchema}
         ]),
         MediaModule,
         CacheModule,
@@ -25,6 +28,6 @@ import { UserModule } from './user.module';
         UserModule,
     ],
     controllers: [PostController],
-    providers: [PostService],
+    providers: [PostService, PostLikeService],
 })
 export class PostModule { }
