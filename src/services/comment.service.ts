@@ -52,7 +52,8 @@ export class CommentService {
         await Promise.all([
             comment.save(),
             this.postModel.updateOne({ _id: createCommentDto.postId }, { $inc: { comments: 1 } }),
-            this.cacheService.del(`post/dynamic/${createCommentDto.postId}`)
+            this.cacheService.del(`post/dynamic/${createCommentDto.postId}`),
+            this.cacheService.del(`post/comments/${comment.post}/*`)
         ]);
     }
 
@@ -140,7 +141,33 @@ export class CommentService {
             this.postModel.updateOne({ _id: comment.post }, { $inc: { comments: -1 } }),
             this.cacheService.del(`post/dynamic/${comment.post}`),
             this.cacheService.del(`comment/static/${commentId}`),
-            this.cacheService.del(`comment/dynamic/${commentId}`)
+            this.cacheService.del(`comment/dynamic/${commentId}`),
+            this.cacheService.del(`post/comments/${comment.post}/*`)
         ]);
+    }
+
+    private getCommentsFromIdList(commentIds: string[]): Promise<CommentDataDto[]> {
+        return Promise.all(commentIds.map(commentId => this.getComment(commentId)));
+    }
+
+    async getCommentsOfPost(postId: string, page: number): Promise<CommentDataDto[]> {
+        const limit = 20;
+        const cacheKey = `post/comments/${postId}/${page}`;
+
+        const cacheData = await this.cacheService.get<string[]>(cacheKey);
+
+        if (cacheData) {
+            return this.getCommentsFromIdList(cacheData);
+        }
+
+        const comments = await this.commentModel.find({
+            post: postId,
+            deleted: false,
+            parent: null
+        },{_id:1}).sort({ createdAt: -1 }).skip((page-1) * limit).limit(limit).exec();
+
+        await this.cacheService.set(cacheKey, comments.map(comment => comment._id.toHexString()), Time.Hour);
+
+        return this.getCommentsFromIdList(comments.map(comment => comment._id.toHexString()));
     }
 }
