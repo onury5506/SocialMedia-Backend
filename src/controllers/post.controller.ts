@@ -2,13 +2,14 @@ import { Body, Controller, Post, UseGuards, Request, Get, Param, HttpException, 
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { CommentDataWithLikedDto, CreateCommentDto } from 'src/dto/comment.dto';
+import { CommentLikeDto, CommentUnlikeDto } from 'src/dto/commentLike.dto';
 import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, ViewPostDto } from 'src/dto/post.dto';
 import { PostLikeDto, PostUnlikeDto } from 'src/dto/postLike.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CommentService } from 'src/services/comment.service';
+import { CommentLikeService } from 'src/services/commentLike.service';
 import { PostService } from 'src/services/post.service';
 import { PostLikeService } from 'src/services/postLike.service';
-import { UserService } from 'src/services/user.service';
 
 @Controller("/post")
 @ApiTags("Post")
@@ -17,6 +18,7 @@ export class PostController {
         private readonly postService: PostService,
         private readonly postLikeService: PostLikeService,
         private readonly commentService: CommentService,
+        private readonly commentLikeService: CommentLikeService,
     ) { }
 
     @UseGuards(JwtGuard)
@@ -86,6 +88,20 @@ export class PostController {
     @Delete("/comment/:commentId")
     deleteComment(@Request() req: RequestWithUser, @Param("commentId") commentId: string): Promise<void>{
         return this.commentService.deleteComment(req.userId, commentId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/comment/like")
+    likeComment(@Request() req: RequestWithUser, @Body() body: CommentLikeDto): Promise<void>{
+        return this.commentLikeService.likeComment(req.userId, body.commentId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/comment/unlike")
+    unlikeComment(@Request() req: RequestWithUser, @Body() body: CommentUnlikeDto): Promise<void>{
+        return this.commentLikeService.unlikeComment(req.userId, body.commentId);
     }
 
     @UseGuards(JwtGuard)
