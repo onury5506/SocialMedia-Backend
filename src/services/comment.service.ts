@@ -83,7 +83,21 @@ export class CommentService {
         const cacheKey = `comment/static/${commentId}`;
         const cacheData = await this.cacheService.get<CommentStaticDataDto>(cacheKey);
         if (cacheData) {
-            return cacheData;
+            try {
+                const writer = await this.userService.getUserProfileById(cacheData.writer.id)
+                cacheData.writer = {
+                    id: writer.id,
+                    name: writer.name,
+                    profilePicture: writer.profilePicture,
+                    username: writer.username
+                }
+
+                return cacheData;
+            } catch (e) {
+                console.error(e)
+                return cacheData;
+            }
+
         }
 
         const comment = await this.commentModel.findOne({
@@ -130,7 +144,7 @@ export class CommentService {
             deleted: false
         }).exec();
 
-        console.log({comment, userId})
+        console.log({ comment, userId })
 
         if (!comment || (comment.writer as Types.ObjectId).toHexString() !== userId) {
             throw new HttpException('deleteComment.error.unauthorized', 403);
@@ -164,7 +178,7 @@ export class CommentService {
             post: postId,
             deleted: false,
             parent: null
-        },{_id:1}).sort({ createdAt: -1 }).skip((page-1) * limit).limit(limit).exec();
+        }, { _id: 1 }).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).exec();
 
         await this.cacheService.set(cacheKey, comments.map(comment => comment._id.toHexString()), Time.Hour);
 
