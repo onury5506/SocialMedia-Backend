@@ -232,7 +232,7 @@ export class PostService {
             return cachedData
         }
 
-        const post = await this.postModel.findOne({ _id: postId, deleted:false, postStatus:PostStatus.PUBLISHED })
+        const post = await this.postModel.findOne({ _id: postId, deleted: false, postStatus: PostStatus.PUBLISHED })
 
         if (!post) {
             throw new HttpException("Post not found", 404)
@@ -263,7 +263,7 @@ export class PostService {
             return cachedData
         }
 
-        const post = await this.postModel.findOne({ _id: postId, deleted:false, postStatus:PostStatus.PUBLISHED }, { likes: 1, comments: 1, views: 1 })
+        const post = await this.postModel.findOne({ _id: postId, deleted: false, postStatus: PostStatus.PUBLISHED }, { likes: 1, comments: 1, views: 1 })
 
         if (!post) {
             throw new HttpException("Post not found", 404)
@@ -280,22 +280,48 @@ export class PostService {
         return dynamicData
     }
 
-    public async getPost(userId:string, postId: string): Promise<PostDataDto> {
+    public async getPost(userId: string, postId: string): Promise<PostDataDto> {
         const [staticData, dynamicData, liked] = await Promise.all([
             this.getPostStaticData(postId),
             this.getPostDynamicData(postId),
             this.postLikeService.isUserLikedPost(userId, postId)
         ])
 
-        const post:PostDataDto = { ...staticData, ...dynamicData, liked }
+        const post: PostDataDto = { ...staticData, ...dynamicData, liked }
 
         const isBlocked = await this.userService.isBlocked(userId, post.user);
 
-        if(isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+        if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
             throw new HttpException("getPost.error.userBlocked", 403);
         }
 
         return post
+    }
+
+    getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {
+        return Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId)))
+    }
+
+    public async getPostOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
+        const cacheKey = `post/user/${userId}/${page}`
+
+        const cachedData = await this.cacheService.get<string[]>(cacheKey)
+
+        if (cachedData) {
+            return this.getPostsFromIdList(queryOwnerId, cachedData)
+        }
+
+        const posts = await this.postModel
+            .find({ user: userId, deleted: false, postStatus: PostStatus.PUBLISHED }, { _id: 1 })
+            .sort({ publishedAt: -1 })
+            .skip((page - 1) * 10)
+            .limit(10)
+
+        const postIds = posts.map(post => post._id.toHexString())
+
+        await this.cacheService.set(cacheKey, postIds, Time.Hour)
+
+        return this.getPostsFromIdList(queryOwnerId, postIds)
     }
 
     public async deletePost(userId: string, postId: string): Promise<void> {
@@ -314,9 +340,9 @@ export class PostService {
         ])
     }
 
-    public async  viewPost(userId:string, postId: string): Promise<void> {
+    public async viewPost(userId: string, postId: string): Promise<void> {
         const userViewedCacheKey = `post/viewed/${userId}/${postId}`
-        if(await this.cacheService.isExist(userViewedCacheKey)){
+        if (await this.cacheService.isExist(userViewedCacheKey)) {
             return;
         }
 
@@ -348,18 +374,18 @@ export class PostService {
         const keys = await this.cacheService.getKeys(prefix)
         const waitList: Promise<void>[] = []
 
-        for(let i=0; i<keys.length; i++){
+        for (let i = 0; i < keys.length; i++) {
             const key = keys[i]
             const postId = key.split("/")[2]
             waitList.push(this.updatePostViews(postId))
-            if(i % 10 === 0){
-                await Promise.all(waitList).catch(() => {})
+            if (i % 10 === 0) {
+                await Promise.all(waitList).catch(() => { })
                 waitList.length = 0
             }
         }
 
-        if(waitList.length > 0){
-            await Promise.all(waitList).catch(() => {})
+        if (waitList.length > 0) {
+            await Promise.all(waitList).catch(() => { })
         }
 
         setTimeout(this.updatePostViewsCron, TimeMs.Minute * 30)
