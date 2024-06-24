@@ -17,7 +17,7 @@ export class CommentLikeService {
     ) {
     }
 
-    async isUserLikedComment(commentId: string, userId: string): Promise<boolean> {
+    async isUserLikedComment(userId: string, commentId: string): Promise<boolean> {
         const commentLike = await this.commentLikeModel.findOne({
             likedBy: userId,
             likedComment: commentId
@@ -26,7 +26,7 @@ export class CommentLikeService {
         return !!commentLike;
     }
 
-    async likeComment(commentId: string, userId: string): Promise<void> {
+    async likeComment(userId: string, commentId: string): Promise<void> {
         const comment = await this.commentModel.findById(commentId);
 
         if (!comment) {
@@ -39,7 +39,7 @@ export class CommentLikeService {
             throw new HttpException("commentLike.error.userBlocked", 403);
         }
 
-        if (await this.isUserLikedComment(commentId, userId)) {
+        if (await this.isUserLikedComment(userId, commentId)) {
             throw new HttpException('commentLike.error.alreadyLiked', 400);
         }
 
@@ -54,14 +54,14 @@ export class CommentLikeService {
         ]);
     }
 
-    async unlikeComment(commentId: string, userId: string): Promise<void> {
+    async unlikeComment(userId: string, commentId: string): Promise<void> {
         const comment = await this.commentModel.findById(commentId);
 
         if (!comment) {
             throw new HttpException('commentLike.error.commentNotFound', 404);
         }
 
-        if(!await this.isUserLikedComment(commentId, userId)) {
+        if(!await this.isUserLikedComment(userId, commentId)) {
             throw new HttpException('commentLike.error.notLiked', 400);
         }
 
