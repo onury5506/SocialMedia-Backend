@@ -54,6 +54,16 @@ export class PostController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
+    @Get("/postOf/:userId/:page")
+    async getPostsOfUser(@Request() req: RequestWithUser, @Param("userId") userId: string, @Param("page") page:number): Promise<PostDataDto[]>{
+        if(page < 1){
+            page = 1;
+        }
+        return await this.postService.getPostsOfUser(req.userId, userId, page);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
     @Get("/:postId")
     async getPost(@Request() req: RequestWithUser, @Param("postId") postId:string): Promise<PostDataDto>{
         return await this.postService.getPost(req.userId, postId);
