@@ -55,6 +55,7 @@ export class CommentService {
             post: createCommentDto.postId,
             content: await this.translateService.translateTextToAllLanguages(createCommentDto.content),
             likes: 0,
+            deleted: false
         }
 
         const comment = new this.commentModel(newComment);
