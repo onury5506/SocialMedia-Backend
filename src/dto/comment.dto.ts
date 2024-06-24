@@ -1,4 +1,4 @@
-import { IsNotEmpty, MaxLength } from "class-validator";
+import { IsNotEmpty, IsOptional, MaxLength } from "class-validator";
 import { IsObjectId } from "class-validator-mongo-object-id";
 import { TranslateResultDto } from "./translate.dto";
 
@@ -6,6 +6,7 @@ export class CreateCommentDto {
     @IsObjectId()
     postId: string;
 
+    @IsOptional()
     @IsObjectId()
     parentCommentId?: string;
 
