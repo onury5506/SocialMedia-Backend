@@ -14,6 +14,8 @@ import { PostLikeService } from 'src/services/postLike.service';
 import { PostLike, PostLikeSchema } from 'src/schemas/postLike.schema';
 import { CommentService } from 'src/services/comment.service';
 import { CommentSchema, Comment } from 'src/schemas/comment.schema';
+import { CommentLike, CommentLikeSchema } from 'src/schemas/commentLike.schema';
+import { CommentLikeService } from 'src/services/commentLike.service';
 
 @Module({
     imports: [
@@ -22,6 +24,7 @@ import { CommentSchema, Comment } from 'src/schemas/comment.schema';
             { name: Post.name, schema: PostSchema },
             { name: PostLike.name, schema: PostLikeSchema },
             { name: Comment.name, schema: CommentSchema },
+            { name: CommentLike.name, schema: CommentLikeSchema },
         ]),
         MediaModule,
         CacheModule,
@@ -31,6 +34,6 @@ import { CommentSchema, Comment } from 'src/schemas/comment.schema';
         UserModule,
     ],
     controllers: [PostController],
-    providers: [PostService, PostLikeService, CommentService],
+    providers: [PostService, PostLikeService, CommentService, CommentLikeService],
 })
 export class PostModule { }
