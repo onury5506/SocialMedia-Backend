@@ -104,15 +104,15 @@ export class UserService {
   }
 
   async getUserProfileById(id: string): Promise<UserProfileDTO> {
-    const res = await this.userModel.findById(id).exec()
-    if (!res) {
-      throw new HttpException('findUser.error.userNotFound', 404);
-    }
-
     const cacheKey = `user/${id}`;
     const cached = await this.cacheService.get<UserProfileDTO>(cacheKey);
     if (cached) {
       return cached;
+    }
+
+    const res = await this.userModel.findById(id).exec()
+    if (!res) {
+      throw new HttpException('findUser.error.userNotFound', 404);
     }
 
     const profile:UserProfileDTO = {
