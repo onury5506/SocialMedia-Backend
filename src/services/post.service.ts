@@ -303,6 +303,13 @@ export class PostService {
     }
 
     public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
+
+        const isBlocked = await this.userService.isBlocked(queryOwnerId, userId);
+
+        if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
+            throw new HttpException("getPostsOfUser.error.userBlocked", 403);
+        }
+
         const cacheKey = `post/user/${userId}/${page}`
 
         const cachedData = await this.cacheService.get<string[]>(cacheKey)
