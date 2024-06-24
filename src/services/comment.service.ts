@@ -55,6 +55,7 @@ export class CommentService {
             post: createCommentDto.postId,
             content: await this.translateService.translateTextToAllLanguages(createCommentDto.content),
             likes: 0,
+            deleted: false
         }
 
         const comment = new this.commentModel(newComment);
@@ -172,11 +173,11 @@ export class CommentService {
         ]);
     }
 
-    private getCommentsFromIdList(queryOwnerId: string, commentIds: string[]): Promise<CommentDataDto[]> {
+    private getCommentsFromIdList(queryOwnerId: string, commentIds: string[]): Promise<CommentDataWithLikedDto[]> {
         return Promise.all(commentIds.map(commentId => this.getComment(queryOwnerId, commentId)));
     }
 
-    async getCommentsOfPost(queryOwnerId: string, postId: string, page: number): Promise<CommentDataDto[]> {
+    async getCommentsOfPost(queryOwnerId: string, postId: string, page: number): Promise<CommentDataWithLikedDto[]> {
         const limit = 20;
         const cacheKey = `post/comments/${postId}/${page}`;
 
