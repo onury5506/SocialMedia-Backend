@@ -141,7 +141,7 @@ export class CommentService {
         const [staticData, dynamicData, liked] = await Promise.all([
             this.getCommentStaticData(commentId),
             this.getCommentDynamicData(commentId),
-            this.commentLikeService.isUserLikedComment(commentId, queryOwnerId)
+            this.commentLikeService.isUserLikedComment(queryOwnerId, commentId)
         ]);
 
         return {
