@@ -302,7 +302,7 @@ export class PostService {
         return Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId)))
     }
 
-    public async getPostOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
+    public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
         const cacheKey = `post/user/${userId}/${page}`
 
         const cachedData = await this.cacheService.get<string[]>(cacheKey)
