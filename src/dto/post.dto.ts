@@ -3,6 +3,7 @@ import { Size } from "src/constants/fileSizeConstans";
 import { TranslateResultDto } from "./translate.dto";
 import { IsObjectId } from "class-validator-mongo-object-id";
 import { IsNotEmpty, MinLength, MaxLength, IsEnum } from "class-validator";
+import { writerDataDto } from "./user.dto";
 
 export enum PostType {
     IMAGE = 'image',
@@ -89,6 +90,10 @@ export class PostDataDto implements PostStaticDataDto, PostDynamicDataDto {
     comments: number;
     views: number;
     liked: boolean;
+}
+
+export class PostDataWithWriterDto extends PostDataDto {
+    writer: writerDataDto;
 }
 
 export class ViewPostDto {

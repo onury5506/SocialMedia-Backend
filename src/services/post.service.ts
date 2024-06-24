@@ -4,7 +4,7 @@ import { PubSubService } from './pubSub.service';
 import { StorageService } from './storage.service';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
-import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes, PostDataDto, PostDynamicDataDto, PostMimeType, PostMimeTypeToPostType, PostStaticDataDto, PostStatus, PostType, VideoTranscodeTaskData } from 'src/dto/post.dto';
+import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes, PostDataDto, PostDataWithWriterDto, PostDynamicDataDto, PostMimeType, PostMimeTypeToPostType, PostStaticDataDto, PostStatus, PostType, VideoTranscodeTaskData } from 'src/dto/post.dto';
 import { TranslateService } from './translate.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, mongo } from 'mongoose';
@@ -280,6 +280,14 @@ export class PostService {
         return dynamicData
     }
 
+    public async getPostWithWriterData(userId: string, postId: string): Promise<PostDataWithWriterDto> {
+        const post = await this.getPost(userId, postId)
+
+        const writer = await this.userService.getWriterData(post.user)
+
+        return { ...post, writer }
+    }
+
     public async getPost(userId: string, postId: string): Promise<PostDataDto> {
         const [staticData, dynamicData, liked] = await Promise.all([
             this.getPostStaticData(postId),
@@ -300,6 +308,10 @@ export class PostService {
 
     getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {
         return Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId)))
+    }
+
+    getPostsWithWriterFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataWithWriterDto[]> {
+        return Promise.all(postIds.map(postId => this.getPostWithWriterData(queryOwnerId, postId)))
     }
 
     public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
