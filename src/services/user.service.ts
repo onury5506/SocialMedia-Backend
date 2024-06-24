@@ -146,7 +146,7 @@ export class UserService {
     }
 
     const profilePicture = res.profilePicture ? await this.storageService.signCdnUrl(res.profilePicture) : "";
-    this.cacheService.set(cacheKey, profilePicture, Time.Hour).catch(e => { });
+    this.cacheService.set(cacheKey, profilePicture, Time.Day).catch(e => { });
 
     return profilePicture;
   }
