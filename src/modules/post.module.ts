@@ -12,13 +12,16 @@ import { TranslateModule } from './translate.modulte';
 import { UserModule } from './user.module';
 import { PostLikeService } from 'src/services/postLike.service';
 import { PostLike, PostLikeSchema } from 'src/schemas/postLike.schema';
+import { CommentService } from 'src/services/comment.service';
+import { CommentSchema, Comment } from 'src/schemas/comment.schema';
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
             { name: Post.name, schema: PostSchema },
-            { name: PostLike.name, schema: PostLikeSchema}
+            { name: PostLike.name, schema: PostLikeSchema },
+            { name: Comment.name, schema: CommentSchema },
         ]),
         MediaModule,
         CacheModule,
@@ -28,6 +31,6 @@ import { PostLike, PostLikeSchema } from 'src/schemas/postLike.schema';
         UserModule,
     ],
     controllers: [PostController],
-    providers: [PostService, PostLikeService],
+    providers: [PostService, PostLikeService, CommentService],
 })
 export class PostModule { }
