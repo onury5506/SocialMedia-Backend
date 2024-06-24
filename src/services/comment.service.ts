@@ -23,6 +23,13 @@ export class CommentService {
     ) {
     }
 
+    increaseCommentLikes(commentId: string, number: number): Promise<void> {
+        return Promise.all([
+            this.commentModel.updateOne({ _id: commentId }, { $inc: { likes: number } }).exec(),
+            this.cacheService.del(`comment/dynamic/${commentId}`)
+        ]).then(() => { });
+    }
+
     async createComment(userId: string, createCommentDto: CreateCommentDto) {
         const post = await this.postService.getPost(userId, createCommentDto.postId);
 
