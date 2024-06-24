@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserService } from './user.service';
@@ -12,6 +12,7 @@ export class CommentLikeService {
         @InjectModel(Comment.name) private commentModel: Model<Comment>,
         @InjectModel(CommentLike.name) private commentLikeModel: Model<CommentLike>,
         private readonly userService: UserService,
+        @Inject(forwardRef(() => CommentService))
         private readonly commentService: CommentService,
     ) {
     }

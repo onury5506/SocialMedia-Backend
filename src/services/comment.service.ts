@@ -1,15 +1,16 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Post } from 'src/schemas/post.schema';
 import { CacheService } from './cache.service';
 import { UserService } from './user.service';
 import { Comment } from 'src/schemas/comment.schema';
-import { CommentDataDto, CommentDynamicDataDto, CommentStaticDataDto, CreateCommentDto } from 'src/dto/comment.dto';
+import { CommentDataDto, CommentDataWithLikedDto, CommentDynamicDataDto, CommentStaticDataDto, CreateCommentDto } from 'src/dto/comment.dto';
 import { PostService } from './post.service';
 import { Time } from 'src/constants/timeConstants';
 import { TranslateService } from './translate.service';
 import { UserDocument } from 'src/schemas/user.schema';
+import { CommentLikeService } from './commentLike.service';
 
 @Injectable()
 export class CommentService {
@@ -20,6 +21,8 @@ export class CommentService {
         private readonly userService: UserService,
         private readonly postService: PostService,
         private readonly translateService: TranslateService,
+        @Inject(forwardRef(() => CommentLikeService))
+        private readonly commentLikeService: CommentLikeService,
     ) {
     }
 
@@ -133,15 +136,17 @@ export class CommentService {
         return data;
     }
 
-    async getComment(commentId: string): Promise<CommentDataDto> {
-        const [staticData, dynamicData] = await Promise.all([
+    async getComment(queryOwnerId: string, commentId: string): Promise<CommentDataWithLikedDto> {
+        const [staticData, dynamicData, liked] = await Promise.all([
             this.getCommentStaticData(commentId),
-            this.getCommentDynamicData(commentId)
+            this.getCommentDynamicData(commentId),
+            this.commentLikeService.isUserLikedComment(commentId, queryOwnerId)
         ]);
 
         return {
             ...staticData,
-            ...dynamicData
+            ...dynamicData,
+            liked
         };
     }
 
@@ -167,18 +172,18 @@ export class CommentService {
         ]);
     }
 
-    private getCommentsFromIdList(commentIds: string[]): Promise<CommentDataDto[]> {
-        return Promise.all(commentIds.map(commentId => this.getComment(commentId)));
+    private getCommentsFromIdList(queryOwnerId: string, commentIds: string[]): Promise<CommentDataDto[]> {
+        return Promise.all(commentIds.map(commentId => this.getComment(queryOwnerId, commentId)));
     }
 
-    async getCommentsOfPost(postId: string, page: number): Promise<CommentDataDto[]> {
+    async getCommentsOfPost(queryOwnerId: string, postId: string, page: number): Promise<CommentDataDto[]> {
         const limit = 20;
         const cacheKey = `post/comments/${postId}/${page}`;
 
         const cacheData = await this.cacheService.get<string[]>(cacheKey);
 
         if (cacheData) {
-            return this.getCommentsFromIdList(cacheData);
+            return this.getCommentsFromIdList(queryOwnerId, cacheData);
         }
 
         const comments = await this.commentModel.find({
@@ -187,8 +192,10 @@ export class CommentService {
             parent: null
         }, { _id: 1 }).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).exec();
 
-        await this.cacheService.set(cacheKey, comments.map(comment => comment._id.toHexString()), Time.Hour);
+        const commentIds = comments.map(comment => comment._id.toHexString());
 
-        return this.getCommentsFromIdList(comments.map(comment => comment._id.toHexString()));
+        await this.cacheService.set(cacheKey, commentIds, Time.Hour);
+
+        return this.getCommentsFromIdList(queryOwnerId, commentIds);
     }
 }

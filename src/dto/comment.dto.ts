@@ -43,3 +43,7 @@ export class CommentDataDto implements CommentDynamicDataDto, CommentStaticDataD
     content: TranslateResultDto;
     createdAt: Date;
 }
+
+export class CommentDataWithLikedDto extends CommentDataDto {
+    liked: boolean;
+}
