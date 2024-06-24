@@ -145,6 +145,13 @@ export class MiniUserProfile {
     following: boolean;
 }
 
+export class writerDataDto {
+    id: string;
+    name: string;
+    username: string;
+    profilePicture: string;
+}
+
 export class FollowUserDTO {
     @ApiProperty()
     @IsObjectId()

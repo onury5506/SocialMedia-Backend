@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfileDTO } from 'src/dto/user.dto';
+import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfileDTO, writerDataDto } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
@@ -38,6 +38,20 @@ export class UserService {
 
   getUserById(id: string) {
     return this.userModel.findById(id).exec();
+  }
+
+  async getWriterData(id: string): Promise<writerDataDto> {
+    const user = await this.getUserProfileById(id);
+    if (!user) {
+      throw new HttpException('findUser.error.userNotFound', 404);
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      profilePicture: user.profilePicture
+    }
   }
 
   async updateUserAbout(id: string, about: string): Promise<void> {
