@@ -43,7 +43,7 @@ export class HashtagService {
         return hashtag.updateOne({ $inc: { postCount: -1 } }).exec();
     }
 
-    searchHashtags(query: string): Promise<HashtagDocument[]> {
+    searchHashtags(query: RegExp | string): Promise<HashtagDocument[]> {
         return this.hashtagModel.find({ name: { $regex: query, $options: 'i' } }).limit(15).exec();
     }
 }
