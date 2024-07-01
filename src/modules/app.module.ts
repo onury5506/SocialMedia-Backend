@@ -9,6 +9,7 @@ import { AuthModule } from './auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PostModule } from './post.module';
+import { HashtagModule } from './hashtag.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PostModule } from './post.module';
     UserModule,
     AuthModule,
     PostModule,
+    HashtagModule,
   ],
   controllers: [AppController],
   providers: [AppService],
