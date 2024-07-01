@@ -8,11 +8,12 @@ import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes,
 import { TranslateService } from './translate.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, mongo } from 'mongoose';
-import { Post as PostModel } from 'src/schemas/post.schema';
+import { PostDocument, Post as PostModel } from 'src/schemas/post.schema';
 import { Time, TimeMs } from 'src/constants/timeConstants';
 import { TranslateResultDto } from 'src/dto/translate.dto';
 import { PostLikeService } from './postLike.service';
 import { UserService } from './user.service';
+import { HashtagService } from './hashtag.service';
 
 @Injectable()
 export class PostService {
@@ -30,6 +31,7 @@ export class PostService {
         private readonly translateService: TranslateService,
         private readonly postLikeService: PostLikeService,
         private readonly userService: UserService,
+        private readonly hashtagService: HashtagService,
     ) {
         this.whenFileUploaded = this.whenFileUploaded.bind(this);
         this.whenVideoTranscoded = this.whenVideoTranscoded.bind(this);
@@ -43,6 +45,22 @@ export class PostService {
 
     wait(ms: number) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    private increaseHashtagCountOfPost(post: PostDocument){
+        const hashtags = post.hashtags;
+
+        return Promise.all(hashtags.map( hashtag => {
+            return this.hashtagService.incrementPostCount(hashtag);
+        }))
+    }
+
+    private async decreaseHashtagCountOfPost(post: PostDocument){
+        const hashtags = post.hashtags;
+
+        return Promise.all(hashtags.map( hashtag => {
+            return this.hashtagService.decrementPostCount(hashtag);
+        }))
     }
 
     private async whenFileUploaded(message: StorageFileUploadedDto) {
@@ -102,7 +120,10 @@ export class PostService {
                 post.url = path
                 post.publishedAt = new Date()
 
-                await post.save()
+                await Promise.all([
+                    post.save(),
+                    this.increaseHashtagCountOfPost(post)
+                ])
             } catch (e) {
                 post.postStatus = PostStatus.FAILED
                 post.save()
@@ -131,7 +152,10 @@ export class PostService {
             post.url = `${userId}/${postId}/edited_video.mp4`
             post.publishedAt = new Date()
 
-            await post.save()
+            await Promise.all([
+                post.save(),
+                this.increaseHashtagCountOfPost(post)
+            ])
         } else {
 
             post.postStatus = PostStatus.FAILED
@@ -355,7 +379,8 @@ export class PostService {
         await Promise.all([
             post.save(),
             this.cacheService.del(`post/static/${postId}`),
-            this.cacheService.del(`post/dynamic/${postId}`)
+            this.cacheService.del(`post/dynamic/${postId}`),
+            this.decreaseHashtagCountOfPost(post)
         ])
     }
 
