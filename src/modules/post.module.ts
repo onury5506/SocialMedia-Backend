@@ -16,6 +16,7 @@ import { CommentService } from 'src/services/comment.service';
 import { CommentSchema, Comment } from 'src/schemas/comment.schema';
 import { CommentLike, CommentLikeSchema } from 'src/schemas/commentLike.schema';
 import { CommentLikeService } from 'src/services/commentLike.service';
+import { HashtagModule } from './hashtag.module';
 
 @Module({
     imports: [
@@ -32,6 +33,7 @@ import { CommentLikeService } from 'src/services/commentLike.service';
         StorageModule,
         TranslateModule,
         UserModule,
+        HashtagModule,
     ],
     controllers: [PostController],
     providers: [PostService, PostLikeService, CommentService, CommentLikeService],
