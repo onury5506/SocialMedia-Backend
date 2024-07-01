@@ -44,6 +44,6 @@ export class HashtagService {
     }
 
     searchHashtags(query: RegExp | string): Promise<HashtagDocument[]> {
-        return this.hashtagModel.find({ name: { $regex: query, $options: 'i' } }).limit(15).exec();
+        return this.hashtagModel.find({ name: { $regex: query, $options: 'i' } }).sort({ postCount: 1 }).limit(15).exec();
     }
 }
