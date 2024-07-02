@@ -16,11 +16,13 @@ export class FeedService {
     constructor(
         @InjectModel(Feed.name) private feedModel: Model<Feed>,
         private readonly cacheService: CacheService,
-        @Inject(forwardRef(()=>PostService)) private readonly postService: PostService,
+        @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
     ) {
-        this.createGlobalFeed().then(() => {
-            console.log('Global feed created')
-        })
+        setTimeout(() => {
+            this.createGlobalFeed().then(() => {
+                console.log('Global feed created')
+            })
+        }, TimeMs.Second * 5)
     }
 
     async getFeedByOwner(owner: string): Promise<Feed> {
@@ -45,9 +47,9 @@ export class FeedService {
 
     async createFeed(owner: string): Promise<FeedDocument> {
         const posts = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, 0, 1000)
-        const newFeed:Feed = {
+        const newFeed: Feed = {
             owner: new mongo.ObjectId(owner),
-            feed: posts.map(postId => new mongo.ObjectId(postId)),
+            feed: posts.map(postId => new mongo.ObjectId(postId)).slice(0, 1000),
             lastDateForFollowing: new Date(),
             lastDateForGlobal: new Date(),
             lastDateForFollowingsFollowings: new Date()
@@ -79,7 +81,7 @@ export class FeedService {
 
             await this.cacheService.setArray(this.globalFeedCacheKey, posts)
         } catch (e) {
-            console.error("Something went wrong while creating global feed!",e)
+            console.error("Something went wrong while creating global feed!", e)
         }
     }
 

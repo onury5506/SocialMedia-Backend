@@ -1,4 +1,4 @@
-import { HttpException, Injectable, Post } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Post, forwardRef } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { PubSubService } from './pubSub.service';
 import { StorageService } from './storage.service';
@@ -30,7 +30,7 @@ export class PostService {
         private readonly cacheService: CacheService,
         private readonly translateService: TranslateService,
         private readonly postLikeService: PostLikeService,
-        private readonly userService: UserService,
+        @Inject(forwardRef(()=>UserService)) private readonly userService: UserService,
         private readonly hashtagService: HashtagService,
     ) {
         this.whenFileUploaded = this.whenFileUploaded.bind(this);
@@ -441,13 +441,13 @@ export class PostService {
         maxComments: number
     }> {
         const cacheKey = "post/maxCounts"
-
+        
         const cachedData = await this.cacheService.get<{
             maxLikes: number,
             maxViews: number,
             maxComments: number
         }>(cacheKey)
-
+        
         if (cachedData) {
             return cachedData
         }
@@ -480,12 +480,12 @@ export class PostService {
                 maxComments: 1
             }
         }
-
+        
         const maxCount = maxCounts[0]
 
-        maxCount.maxLikes = maxCount.maxLikes || 1
-        maxCount.maxViews = maxCount.maxViews || 1
-        maxCount.maxComments = maxCount.maxComments || 1
+        maxCount.maxLikes = maxCount?.maxLikes || 1
+        maxCount.maxViews = maxCount?.maxViews || 1
+        maxCount.maxComments = maxCount?.maxComments || 1
 
         await this.cacheService.set(cacheKey, maxCount, Time.Minute * 30)
 

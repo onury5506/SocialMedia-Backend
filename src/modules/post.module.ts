@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PostController } from 'src/controllers/post.controller';
 import { Post, PostSchema } from 'src/schemas/post.schema';
@@ -32,7 +32,7 @@ import { HashtagModule } from './hashtag.module';
         PubSubModule,
         StorageModule,
         TranslateModule,
-        UserModule,
+        forwardRef(() => UserModule),
         HashtagModule,
     ],
     controllers: [PostController],

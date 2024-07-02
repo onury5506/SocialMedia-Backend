@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
@@ -11,6 +11,7 @@ import { Follow } from 'src/schemas/follow.schema';
 import { CacheService } from './cache.service';
 import { Block } from 'src/schemas/block.schema';
 import { Time } from 'src/constants/timeConstants';
+import { FeedService } from './feed.service';
 
 @Injectable()
 export class UserService {
@@ -22,6 +23,7 @@ export class UserService {
     private readonly storageService: StorageService,
     private readonly mediaService: MediaService,
     private readonly cacheService: CacheService,
+    @Inject(forwardRef(() => FeedService)) private readonly feedService: FeedService,
   ) { }
 
   async createUser(user: User): Promise<User> {
@@ -33,7 +35,11 @@ export class UserService {
 
     user.password = await bcrypt.hash(user.password, 10)
     const newUser = new this.userModel(user);
-    return newUser.save();
+    await newUser.save();
+
+    await this.feedService.createFeed(newUser._id.toHexString())
+
+    return newUser;
   }
 
   getUserById(id: string) {
@@ -129,7 +135,7 @@ export class UserService {
       throw new HttpException('findUser.error.userNotFound', 404);
     }
 
-    const profile:UserProfileDTO = {
+    const profile: UserProfileDTO = {
       id: res._id.toHexString(),
       name: res.name,
       username: res.username,
@@ -154,7 +160,7 @@ export class UserService {
       return cached;
     }
 
-    const res = await this.userModel.findById(id,{profilePicture:1}).exec()
+    const res = await this.userModel.findById(id, { profilePicture: 1 }).exec()
     if (!res) {
       throw new HttpException('findUser.error.userNotFound', 404);
     }
@@ -169,7 +175,7 @@ export class UserService {
     return !!(await this.followModel.findOne({ follower: followerId, following: followingId }).exec());
   }
 
-  private async setProfilePicture(res: Object & { id: string, profilePicture: string}) {
+  private async setProfilePicture(res: Object & { id: string, profilePicture: string }) {
     if (res.id) {
       res.profilePicture = await this.getUserProfilePicture(res.id)
     }
@@ -181,7 +187,7 @@ export class UserService {
 
   async getFollowers(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
     const isBlocked = await this.isBlocked(queryOwnerId, id)
-    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+    if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
       throw new HttpException('getFollowers.error.cannotGetFollowersBlockedUser', 400);
     }
 
@@ -213,7 +219,7 @@ export class UserService {
 
   async getFollowings(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
     const isBlocked = await this.isBlocked(queryOwnerId, id)
-    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+    if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
       throw new HttpException('getFollowings.error.cannotGetFollowingsBlockedUser', 400);
     }
 
@@ -249,7 +255,7 @@ export class UserService {
     }
 
     const isBlocked = await this.isBlocked(followerId, followingId)
-    if( isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+    if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
       throw new HttpException('followUser.error.cannotFollowBlockedUser', 400);
     }
 

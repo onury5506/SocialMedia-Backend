@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post } from 'src/schemas/post.schema';
@@ -12,7 +12,7 @@ export class PostLikeService {
         @InjectModel(PostLike.name) private postLikeModel: Model<PostLike>,
         @InjectModel(Post.name) private postModel: Model<Post>,
         private readonly cacheService: CacheService,
-        private readonly userService: UserService,
+        @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
     ) { }
 
     async likePost(likedBy: string, likedPost: string): Promise<void> {
@@ -22,12 +22,12 @@ export class PostLikeService {
             throw new HttpException('likePost.error.alreadyLiked', 400);
         }
         const post = await this.postModel.findById(likedPost).exec();
-        if(!post) {
+        if (!post) {
             throw new HttpException('likePost.error.postNotFound', 404);
         }
 
         const isBlocked = await this.userService.isBlocked(likedBy, post.user as any);
-        if(isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+        if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
             throw new HttpException("likePost.error.userBlocked", 403);
         }
 
@@ -51,12 +51,12 @@ export class PostLikeService {
         }
 
         const post = await this.postModel.findById(likedPost).exec();
-        if(!post) {
+        if (!post) {
             throw new HttpException('likePost.error.postNotFound', 404);
         }
 
         const isBlocked = await this.userService.isBlocked(likedBy, post.user as any);
-        if(isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1){
+        if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
             throw new HttpException("likePost.error.userBlocked", 403);
         }
 
@@ -64,11 +64,11 @@ export class PostLikeService {
             this.postLikeModel.deleteOne({ likedBy, likedPost }).exec(),
             post.updateOne({ $inc: { likes: -1 } }),
             this.cacheService.del(`post/dynamic/${likedPost}`),
-        ]) 
+        ])
     }
 
     async isUserLikedPost(likedBy: string, likedPost: string): Promise<boolean> {
-        const likedBefore = await this.postLikeModel.findOne({ likedBy, likedPost },{_id:1}).exec();
+        const likedBefore = await this.postLikeModel.findOne({ likedBy, likedPost }, { _id: 1 }).exec();
         return !!likedBefore;
     }
 }

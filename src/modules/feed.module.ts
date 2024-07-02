@@ -14,5 +14,6 @@ import { FeedController } from 'src/controllers/feed.controller';
     ],
     controllers: [FeedController],
     providers: [FeedService],
+    exports: [FeedService]
 })
 export class FeedModule { }
