@@ -47,18 +47,18 @@ export class PostService {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    private increaseHashtagCountOfPost(post: PostDocument){
+    private increaseHashtagCountOfPost(post: PostDocument) {
         const hashtags = post.hashtags;
 
-        return Promise.all(hashtags.map( hashtag => {
+        return Promise.all(hashtags.map(hashtag => {
             return this.hashtagService.incrementPostCount(hashtag);
         }))
     }
 
-    private async decreaseHashtagCountOfPost(post: PostDocument){
+    private async decreaseHashtagCountOfPost(post: PostDocument) {
         const hashtags = post.hashtags;
 
-        return Promise.all(hashtags.map( hashtag => {
+        return Promise.all(hashtags.map(hashtag => {
             return this.hashtagService.decrementPostCount(hashtag);
         }))
     }
@@ -433,5 +433,134 @@ export class PostService {
         }
 
         setTimeout(this.updatePostViewsCron, TimeMs.Minute * 30)
+    }
+
+    async getMaxLikeViewAndCommentCount(): Promise<{
+        maxLikes: number,
+        maxViews: number,
+        maxComments: number
+    }> {
+        const cacheKey = "post/maxCounts"
+
+        const cachedData = await this.cacheService.get<{
+            maxLikes: number,
+            maxViews: number,
+            maxComments: number
+        }>(cacheKey)
+
+        if (cachedData) {
+            return cachedData
+        }
+
+        const maxCounts = await this.postModel.aggregate([
+            {
+                $match: {
+                    postStatus: PostStatus.PUBLISHED,
+                    deleted: false
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    maxLikes: { $max: "$likes" },
+                    maxViews: { $max: "$views" },
+                    maxComments: { $max: "$comments" }
+                }
+            }, {
+                $project: {
+                    _id: 0
+                }
+            }
+        ])
+
+        if (maxCounts.length === 0) {
+            return {
+                maxLikes: 1,
+                maxViews: 1,
+                maxComments: 1
+            }
+        }
+
+        const maxCount = maxCounts[0]
+
+        maxCount.maxLikes = maxCount.maxLikes || 1
+        maxCount.maxViews = maxCount.maxViews || 1
+        maxCount.maxComments = maxCount.maxComments || 1
+
+        await this.cacheService.set(cacheKey, maxCount, Time.Minute * 30)
+
+        return maxCount
+    }
+
+    async getGlobalPosts(startDate: Date, endDate?: Date) {
+        const { maxLikes, maxComments, maxViews } = await this.getMaxLikeViewAndCommentCount()
+
+        const matchCriteria: any = {
+            postStatus: PostStatus.PUBLISHED,
+            deleted: false,
+        };
+
+        if (startDate) {
+            matchCriteria.publishedAt = { $gte: new Date(startDate) };
+        }
+        if (endDate) {
+            matchCriteria.publishedAt = {
+                ...matchCriteria.publishedAt,
+                $lte: new Date(endDate),
+            };
+        }
+
+        const posts: {
+            _id: mongo.ObjectId;
+        }[] = await this.postModel.aggregate([
+            {
+                $match: matchCriteria
+            },
+            {
+                $addFields: {
+                    normalizedLikes: { $divide: ['$likes', maxLikes] },
+                    normalizedViews: { $divide: ['$views', maxViews] },
+                    normalizedComments: { $divide: ['$comments', maxComments] },
+                    daysSincePublished: { $divide: [{ $subtract: [new Date(), '$publishedAt'] }, 86400000] },
+                    recencyWeight: {
+                        $max: [
+                            0,
+                            {
+                                $subtract: [
+                                    1,
+                                    {
+                                        $multiply: [
+                                            "$daysSincePublished",
+                                            0.14, // 1 / 7, day of a week
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    weight: {
+                        $add: [
+                            { $multiply: ['$normalizedLikes', 0.35] },
+                            { $multiply: ['$normalizedViews', 0.25] },
+                            { $multiply: ['$normalizedComments', 0.10] },
+                            { $multiply: ['$recencyWeight', 0.40] }
+                        ],
+                    },
+                },
+            },
+            {
+                $sort: { weight: -1 },
+            },
+            {
+                $project: {
+                    _id: 1,
+                }
+            },
+            {
+                $limit: 1000,
+            }
+        ])
+
+        return posts.map(post => post._id)
     }
 }
