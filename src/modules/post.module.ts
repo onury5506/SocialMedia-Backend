@@ -37,5 +37,6 @@ import { HashtagModule } from './hashtag.module';
     ],
     controllers: [PostController],
     providers: [PostService, PostLikeService, CommentService, CommentLikeService],
+    exports: [PostService]
 })
 export class PostModule { }
