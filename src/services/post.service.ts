@@ -330,8 +330,9 @@ export class PostService {
         return post
     }
 
-    getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {
-        return Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId)))
+    async getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {
+        const posts = await Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId).catch(() => null)))
+        return posts.filter(post => post !== null)
     }
 
     getPostsWithWriterFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataWithWriterDto[]> {
