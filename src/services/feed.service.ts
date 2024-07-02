@@ -26,23 +26,38 @@ export class FeedService {
     }
 
     async getFeedByOwner(owner: string): Promise<Feed> {
-        const cacheKey = `feed:${owner}`
-
-        const cachedFeed = this.cacheService.get<Feed>(cacheKey)
-
-        if (cachedFeed) {
-            return cachedFeed
-        }
-
         const feed = await this.feedModel.findOne({ owner }).exec()
 
         if (!feed) {
             throw new HttpException('Feed not found', 404)
         }
 
-        await this.cacheService.set(cacheKey, feed)
-
         return feed
+    }
+
+    async getUserFeedPosts(owner: string, page: number): Promise<PostDataDto[]> {
+        const pageSize = 10;
+        if (page < 1) {
+            page = 1
+        } else if (page > 100) {
+            page = 100
+        }
+        
+        const start = (page - 1) * pageSize
+        const end = start + pageSize
+
+        const cacheKey = `feed:${owner}`
+        let posts: string[] = []
+        if(await this.cacheService.isExist(cacheKey)){
+            posts = await this.cacheService.getCachedArraySlice<string>(cacheKey, start, end)
+        }else{
+            const feed = await this.getFeedByOwner(owner)
+            posts = feed.feed.map(post => post.toHexString())
+            await this.cacheService.setArray(cacheKey, posts)
+            posts = posts.slice(start, end)
+        }
+
+        return this.postService.getPostsFromIdList(owner, posts)
     }
 
     async createFeed(owner: string): Promise<FeedDocument> {
