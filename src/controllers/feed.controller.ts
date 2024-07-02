@@ -17,4 +17,12 @@ export class FeedController {
     async getGlobalFeedPage(@Request() req: RequestWithUser, @Param("page") page: number): Promise<PostDataDto[]> {
         return this.feedService.getPagedGlobalFeed(req.userId, page)
     }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/me/:page")
+    @ApiResponse({ status: 200, type: [PostDataDto] })
+    async getPersonalFeedPage(@Request() req: RequestWithUser, @Param("page") page: number): Promise<PostDataDto[]> {
+        return this.feedService.getUserFeedPosts(req.userId, page)
+    }
 }
