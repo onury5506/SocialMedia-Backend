@@ -24,15 +24,15 @@ export class Feed {
 
     @Prop()
     @ApiProperty()
-    lastDateForFollowing?: Date;
+    lastDateForFollowing: Date;
 
     @Prop()
     @ApiProperty()
-    lastDateForGlobal?: Date;
+    lastDateForGlobal: Date;
 
     @Prop()
     @ApiProperty()
-    lastDateForFollowingsFollowings?: Date;
+    lastDateForFollowingsFollowings: Date;
 
     @Prop()
     @ApiProperty()
