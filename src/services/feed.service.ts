@@ -97,8 +97,6 @@ export class FeedService {
 
         const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end)
 
-        return Promise.all(cachedFeed.map(postId => {
-            return this.postService.getPost(queryOwnerId, postId)
-        }))
+        return this.postService.getPostsFromIdList(queryOwnerId, cachedFeed)
     }
 }
