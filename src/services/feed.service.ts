@@ -1,7 +1,7 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, mongo } from 'mongoose';
-import { Feed } from 'src/schemas/feed.schema';
+import { Feed, FeedDocument } from 'src/schemas/feed.schema';
 import { CacheService } from './cache.service';
 import { PostService } from './post.service';
 import { UserService } from './user.service';
@@ -16,8 +16,7 @@ export class FeedService {
     constructor(
         @InjectModel(Feed.name) private feedModel: Model<Feed>,
         private readonly cacheService: CacheService,
-        private readonly postService: PostService,
-        private readonly userService: UserService,
+        @Inject(forwardRef(()=>PostService)) private readonly postService: PostService,
     ) {
         this.createGlobalFeed().then(() => {
             console.log('Global feed created')
@@ -44,6 +43,22 @@ export class FeedService {
         return feed
     }
 
+    async createFeed(owner: string): Promise<FeedDocument> {
+        const posts = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, 0, 1000)
+        const newFeed:Feed = {
+            owner: new mongo.ObjectId(owner),
+            feed: posts.map(postId => new mongo.ObjectId(postId)),
+            lastDateForFollowing: new Date(),
+            lastDateForGlobal: new Date(),
+            lastDateForFollowingsFollowings: new Date()
+        }
+
+        const feed = new this.feedModel(newFeed)
+
+        await feed.save()
+        return feed
+    }
+
     @Interval(TimeMs.Hour)
     async createGlobalFeed() {
         try {
@@ -61,7 +76,7 @@ export class FeedService {
             if (posts.length > 2000) {
                 posts = posts.slice(0, 2000)
             }
-            
+
             await this.cacheService.setArray(this.globalFeedCacheKey, posts)
         } catch (e) {
             console.error("Something went wrong while creating global feed!",e)
