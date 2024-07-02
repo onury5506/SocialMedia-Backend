@@ -23,6 +23,17 @@ export class CacheService {
         return this.client.set(key, JSON.stringify(value), expire ? { EX: expire } : undefined);
     }
 
+    public setArray(key: string, value: any[], expire?: number): Promise<any> {
+        return this.client
+            .del(key).then(
+                () => this.client.lPush(key, value.map(v => JSON.stringify(v)))
+            ).then(() => {
+                if (expire) {
+                    return this.client.expire(key, expire);
+                }
+            });
+    }
+
     public incr(key: string): Promise<number> {
         return this.client.incr(key);
     }
@@ -33,13 +44,19 @@ export class CacheService {
         return res ? JSON.parse(res) as T : null;
     }
 
+    public async getCachedArraySlice<T>(key: string, start: number, end: number): Promise<T[]> {
+        const res = await this.client.lRange(key, start, end)
+
+        return res.map(r => JSON.parse(r)) as T[]
+    }
+
     public getKeys(prefix: string): Promise<string[]> {
         return this.client.keys(prefix);
     }
 
     public async del(prefix: string): Promise<any> {
         const keys = await this.client.keys(prefix);
-        if(keys.length === 0){
+        if (keys.length === 0) {
             return this.client.del(prefix);
         }
         return this.client.del(keys);
