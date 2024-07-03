@@ -20,12 +20,12 @@ export class AuthService {
         const user = await this.userModel.findOne({ $or: [{ email: loginDto.username }, { username: loginDto.username }]});
 
         if (!user) {
-            throw new NotFoundException('User not found or password is incorrect');
+            throw new NotFoundException('error.auth.userOrPasswordInvalid');
         }
 
         const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
         if (!isPasswordValid) {
-            throw new NotFoundException('User not found or password is incorrect');
+            throw new NotFoundException('error.auth.userOrPasswordInvalid');
         }
 
         const payload: UserTokenDto = {
@@ -55,17 +55,17 @@ export class AuthService {
 
         const payload = this.jwtService.verify(token);
         if (payload.tokenType !== 'refresh_token') {
-            throw new NotFoundException('auth.refresh.invalid_refresh_token');
+            throw new NotFoundException('error.auth.invalid_refresh_token');
         }
 
         const isRefreshTokenValid = await this.cacheService.isExist(`refresh_token/${payload?.id}/${token}`);
         if (!isRefreshTokenValid) {
-            throw new NotFoundException('auth.refresh.invalid_refresh_token');
+            throw new NotFoundException('error.auth.invalid_refresh_token');
         }
 
         const user = await this.userModel.findById(payload.id);
         if (!user) {
-            throw new NotFoundException('auth.refresh.user_not_found');
+            throw new NotFoundException('error.auth.user_not_found');
         }
 
         const newPayload: UserTokenDto = {
