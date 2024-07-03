@@ -1,6 +1,6 @@
 import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { User } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
@@ -247,6 +247,11 @@ export class UserService {
         return res;
       })
     )
+  }
+
+  async getFollowingsIds(id: string): Promise<string[]> {
+    const following = await this.followModel.find({ follower: id }, { following: 1 }).exec();
+    return following.map(f => f.following+"");
   }
 
   async followUser(followerId: string, followingId: string): Promise<void> {

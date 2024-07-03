@@ -20,7 +20,7 @@ export class Feed {
         ref: Post.name
     })
     @ApiProperty()
-    feed: PostDocument[] | mongoose.Types.ObjectId[];
+    feed: mongoose.Types.ObjectId[];
 
     @Prop()
     @ApiProperty()

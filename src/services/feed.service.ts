@@ -1,11 +1,10 @@
 import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId, mongo } from 'mongoose';
+import { Model, mongo } from 'mongoose';
 import { Feed, FeedDocument } from 'src/schemas/feed.schema';
 import { CacheService } from './cache.service';
 import { PostService } from './post.service';
-import { UserService } from './user.service';
-import { TimeMs } from 'src/constants/timeConstants';
+import { TimeMs, Time } from 'src/constants/timeConstants';
 import { PostDataDto } from 'src/dto/post.dto';
 import { Interval } from '@nestjs/schedule';
 
@@ -53,11 +52,41 @@ export class FeedService {
         }else{
             const feed = await this.getFeedByOwner(owner)
             posts = feed.feed.map(post => post.toHexString())
-            await this.cacheService.setArray(cacheKey, posts)
+            await this.cacheService.setArray(cacheKey, posts, Time.Minute * 30)
             posts = posts.slice(start, end)
         }
 
         return this.postService.getPostsFromIdList(owner, posts)
+    }
+
+    async updateFeed(owner: string) {
+        const feed = await this.feedModel.findOne({ owner }).exec()
+        
+        const followingPosts = await this.postService.getFollowingPosts(owner, feed.lastDateForFollowing)
+
+        /* ToDo followings followings posts */
+
+        let globalPosts = await this.postService.getGlobalPosts(feed.lastDateForGlobal, new Date())
+
+        if(globalPosts.length > 100){
+            globalPosts = globalPosts.slice(0, 100)
+        }
+
+        const posts = [
+            ...followingPosts.ids,
+            ...globalPosts,
+            ...feed.feed
+        ]
+
+        feed.feed = [...new Set(posts)].slice(0, 1000)
+        feed.lastDateForFollowing = new Date()
+        feed.lastDateForGlobal = new Date()
+        feed.lastDateForFollowingsFollowings = new Date()
+
+        await Promise.all([
+            feed.save(),
+            this.cacheService.setArray(`feed:${owner}`, posts.map(post => post + ""), Time.Minute * 30)
+        ])
     }
 
     async createFeed(owner: string): Promise<FeedDocument> {

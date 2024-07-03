@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Request } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards, Request, Post } from "@nestjs/common";
 import { ApiTags, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
 import { RequestWithUser } from "src/dto/auth.dto";
 import { PostDataDto } from "src/dto/post.dto";
@@ -24,5 +24,13 @@ export class FeedController {
     @ApiResponse({ status: 200, type: [PostDataDto] })
     async getPersonalFeedPage(@Request() req: RequestWithUser, @Param("page") page: number): Promise<PostDataDto[]> {
         return this.feedService.getUserFeedPosts(req.userId, page)
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Post("/refresh")
+    @ApiResponse({ status: 200 })
+    async refreshFeed(@Request() req: RequestWithUser): Promise<void> {
+        return this.feedService.updateFeed(req.userId)
     }
 }
