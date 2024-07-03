@@ -502,12 +502,12 @@ export class PostService {
         };
 
         if (startDate) {
-            matchCriteria.publishedAt = { $gte: new Date(startDate) };
+            matchCriteria.publishedAt = { $gt: new Date(startDate) };
         }
         if (endDate) {
             matchCriteria.publishedAt = {
                 ...matchCriteria.publishedAt,
-                $lte: new Date(endDate),
+                $lt: new Date(endDate),
             };
         }
 
@@ -563,5 +563,46 @@ export class PostService {
         ])
 
         return posts.map(post => post._id)
+    }
+
+    async getFollowingPosts(userId: string, startDate: Date) {
+        const following = await this.userService.getFollowingsIds(userId)
+
+        if (following.length === 0) {
+            return {
+                ids: [],
+                lastDate: new Date()
+            }
+        }
+
+        const posts: {
+            _id: mongo.ObjectId;
+            publishedAt: Date;
+        }[] = await this.postModel.aggregate([
+            {
+                $match: {
+                    postStatus: PostStatus.PUBLISHED,
+                    deleted: false,
+                    user: { $in: following },
+                    publishedAt: { $gt: startDate }
+                }
+            },
+            {
+                $sort: { 
+                    publishedAt: -1 
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    publishedAt: 1
+                }
+            }
+        ])
+
+        return {
+            ids: posts.map(post => post._id),
+            lastDate: posts[0]?.publishedAt
+        }
     }
 }
