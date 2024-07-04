@@ -123,6 +123,13 @@ export class UserService {
 
   }
 
+  async increasePostCount(id: string, number: number): Promise<void> {
+    await Promise.all([
+      this.userModel.findByIdAndUpdate(id, { $inc: { postCount: number } }).exec(),
+      this.cacheService.del(`user/${id}`).catch(e => { })
+    ])
+  }
+
   async getUserProfileById(id: string): Promise<UserProfileDTO> {
     const cacheKey = `user/${id}`;
     const cached = await this.cacheService.get<UserProfileDTO>(cacheKey);
