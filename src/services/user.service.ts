@@ -28,9 +28,9 @@ export class UserService {
 
   async createUser(user: User): Promise<UserDocument> {
     if (await this.userModel.findOne({ email: user.email })) {
-      throw new HttpException('register.error.emailAlreadyExists', 400);
+      throw new HttpException('error.register.emailAlreadyExists', 400);
     } else if (await this.userModel.findOne({ username: user.username })) {
-      throw new HttpException('register.error.usernameAlreadyExists', 400);
+      throw new HttpException('error.register.usernameAlreadyExists', 400);
     }
 
     user.password = await bcrypt.hash(user.password, 10)
