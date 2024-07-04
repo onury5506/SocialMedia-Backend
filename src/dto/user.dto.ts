@@ -13,42 +13,66 @@ export class RegisterUserDTO {
         description: "Username of the user",
         example: "onury5506"
     })
-    @MinLength(4)
-    @MaxLength(20)
-    @IsNotEmpty()
+    @MinLength(4, {
+        message: "error.register.usernameMinlength"
+    })
+    @MaxLength(20, {
+        message: "error.register.usernameMaxlength"
+    })
+    @IsNotEmpty({
+        message: "error.register.usernameEmpty"
+    })
     username: string;
 
     @ApiProperty({
         description: "Name of the user",
         example: "Onur Yıldız"
     })
-    @IsNotEmpty()
-    @MinLength(4)
-    @MaxLength(50)
+    
+    @MinLength(4, {
+        message: "error.register.nameMinlength"
+    })
+    @MaxLength(50, {
+        message: "error.register.nameMaxlength"
+    })
+    @IsNotEmpty({
+        message: "error.register.nameEmpty"
+    })
     name: string;
 
     @ApiProperty({
         description: "Email of the user",
         example: "example@example.com"
     })
-    @IsEmail()
-    @IsNotEmpty()
-    @MaxLength(50)
+    @MaxLength(50,{
+        message: "error.register.emailMaxlength"
+    })
+    @IsEmail({},{
+        message: "error.register.emailInvalid"
+    })
+    @IsNotEmpty({
+        message: "error.register.emailEmpty"
+    })
     email: string;
 
     @ApiProperty({
         description: "Password of the user",
         example: "password123"
     })
-
-    @IsNotEmpty()
-    @MaxLength(20)
+    @MaxLength(20,{
+        message: "error.register.passwordMaxlength"
+    })
     @IsStrongPassword({
         minLength: 8,
         minLowercase: 1,
         minUppercase: 1,
         minNumbers: 1,
         minSymbols: 1
+    },{
+        message: "error.register.passwordWeak"
+    })
+    @IsNotEmpty({
+        message: "error.register.passwordEmpty"
     })
     password: string;
 
