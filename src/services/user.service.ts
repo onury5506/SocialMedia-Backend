@@ -1,7 +1,7 @@
 import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { User } from 'src/schemas/user.schema';
+import { User, UserDocument } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
 import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfileDTO, writerDataDto } from 'src/dto/user.dto';
@@ -26,7 +26,7 @@ export class UserService {
     @Inject(forwardRef(() => FeedService)) private readonly feedService: FeedService,
   ) { }
 
-  async createUser(user: User): Promise<User> {
+  async createUser(user: User): Promise<UserDocument> {
     if (await this.userModel.findOne({ email: user.email })) {
       throw new HttpException('register.error.emailAlreadyExists', 400);
     } else if (await this.userModel.findOne({ username: user.username })) {

@@ -61,6 +61,20 @@ export class RegisterUserDTO {
     language: Language;
 }
 
+export class RegisterResponseDTO{
+    @ApiProperty()
+    id: string;
+
+    @ApiProperty()
+    username: string;
+
+    @ApiProperty()
+    name: string;
+
+    @ApiProperty()
+    email: string;
+}
+
 export class UpdateUserAboutDTO {
     @ApiProperty({
         description: "About of the user",

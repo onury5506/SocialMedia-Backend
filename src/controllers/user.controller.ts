@@ -6,7 +6,7 @@ import { Time } from 'src/constants/timeConstants';
 import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserProfileWithRelationDTO, UserRoles } from 'src/dto/user.dto';
+import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterResponseDTO, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserProfileWithRelationDTO, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
@@ -19,7 +19,7 @@ export class UserController {
 
     @Post("/register")
     @ApiCreatedResponse({ description: "Registers a new user", type: User })
-    registerUser(@Body() registerUserDTO: RegisterUserDTO): Promise<User> {
+    async registerUser(@Body() registerUserDTO: RegisterUserDTO): Promise<RegisterResponseDTO> {
 
         const about: TranslateResultDto = {
             originalLanguage: Language.ENGLISH,
@@ -40,7 +40,14 @@ export class UserController {
             postCount: 0
         }
 
-        return this.userService.createUser(newUser);
+        const res = await this.userService.createUser(newUser);
+
+        return {
+            id: res._id.toHexString(),
+            username: res.username,
+            email: res.email,
+            name: res.name
+        }
     }
 
     @UseGuards(JwtGuard)
