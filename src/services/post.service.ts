@@ -119,9 +119,9 @@ export class PostService {
                 post.postStatus = PostStatus.PUBLISHED
                 post.url = path
                 post.publishedAt = new Date()
-
+                await post.save()
                 await Promise.all([
-                    post.save(),
+                    this.userService.increasePostCount(userId,1),
                     this.increaseHashtagCountOfPost(post)
                 ])
             } catch (e) {
@@ -151,9 +151,9 @@ export class PostService {
             post.postStatus = PostStatus.PUBLISHED
             post.url = `${userId}/${postId}/edited_video.mp4`
             post.publishedAt = new Date()
-
+            await post.save()
             await Promise.all([
-                post.save(),
+                this.userService.increasePostCount(userId,1),
                 this.increaseHashtagCountOfPost(post)
             ])
         } else {
@@ -376,12 +376,12 @@ export class PostService {
         }
 
         post.deleted = true
-
+        await post.save()
         await Promise.all([
-            post.save(),
             this.cacheService.del(`post/static/${postId}`),
             this.cacheService.del(`post/dynamic/${postId}`),
-            this.decreaseHashtagCountOfPost(post)
+            this.decreaseHashtagCountOfPost(post),
+            this.userService.increasePostCount(userId,-1)
         ])
     }
 
