@@ -18,7 +18,7 @@ export class UserController {
     constructor(private readonly userService: UserService) { }
 
     @Post("/register")
-    @ApiCreatedResponse({ description: "Registers a new user", type: User })
+    @ApiCreatedResponse({ description: "Registers a new user", type: RegisterResponseDTO })
     async registerUser(@Body() registerUserDTO: RegisterUserDTO): Promise<RegisterResponseDTO> {
 
         const about: TranslateResultDto = {
