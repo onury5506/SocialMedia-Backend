@@ -6,7 +6,7 @@ import { Time } from 'src/constants/timeConstants';
 import { CacheTTL } from 'src/decarotors/cache.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { Language, TranslateResultDto } from 'src/dto/translate.dto';
-import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterResponseDTO, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserAboutDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserProfileWithRelationDTO, UserRoles } from 'src/dto/user.dto';
+import { BlockUserDTO, FollowUserDTO, IsBlockedDTO, MiniUserProfile, RegisterResponseDTO, RegisterUserDTO, UnblockUserDTO, UnfollowUserDto, UpdateUserDTO, UpdateUserProfilePictureDTO, UserProfileDTO, UserProfileWithRelationDTO, UserRoles } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
@@ -84,10 +84,10 @@ export class UserController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
-    @Put("/me/about")
+    @Put("/me")
     @ApiResponse({ status: 200 })
-    updateUserAbout(@Request() req: RequestWithUser, @Body() about: UpdateUserAboutDTO) {
-        return this.userService.updateUserAbout(req.userId, about.about);
+    updateUser(@Request() req: RequestWithUser, @Body() updateUserAboutDTO: UpdateUserDTO) {
+        return this.userService.updateUser(req.userId, updateUserAboutDTO);
     }
 
     @UseGuards(JwtGuard)

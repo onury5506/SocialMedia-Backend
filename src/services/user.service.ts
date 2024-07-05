@@ -4,7 +4,7 @@ import mongoose, { Model } from 'mongoose';
 import { User, UserDocument } from 'src/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { TranslateService } from './translate.service';
-import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserProfilePictureDTO, UserProfileDTO, writerDataDto } from 'src/dto/user.dto';
+import { IsBlockedDTO, IsFollowedDTO, MiniUserProfile, UpdateUserDTO, UpdateUserProfilePictureDTO, UserProfileDTO, writerDataDto } from 'src/dto/user.dto';
 import { StorageService } from './storage.service';
 import { MediaService } from './media.service';
 import { Follow } from 'src/schemas/follow.schema';
@@ -60,13 +60,35 @@ export class UserService {
     }
   }
 
-  async updateUserAbout(id: string, about: string): Promise<void> {
+  async updateUser(id: string, updateUserAboutDTO: UpdateUserDTO): Promise<void> {
     const user = await this.getUserById(id);
     if (!user) {
       throw new HttpException('updateUser.error.userNotFound', 404);
     }
 
-    user.about = await this.translateService.translateTextToAllLanguages(about)
+    if(updateUserAboutDTO.username){
+      const isUsed = await this.userModel.findOne({ username: updateUserAboutDTO.username, _id: { $ne: id } }).exec();
+      if (isUsed) {
+        throw new HttpException('error.register.usernameAlreadyExists', 400);
+      }
+      user.username = updateUserAboutDTO.username;
+    }
+
+    if(updateUserAboutDTO.password && updateUserAboutDTO.oldPassword){
+      let oldPasswordMatch = await bcrypt.compare(updateUserAboutDTO.oldPassword, user.password);
+      if (!oldPasswordMatch) {
+        throw new HttpException('updateUser.error.oldPasswordIncorrect', 400);
+      }
+      user.password = await bcrypt.hash(updateUserAboutDTO.password, 10) 
+    }
+
+    if(updateUserAboutDTO.name){
+      user.name = updateUserAboutDTO.name;
+    }
+
+    if(updateUserAboutDTO.about){
+      user.about = await this.translateService.translateTextToAllLanguages(updateUserAboutDTO.about)
+    }
 
     try {
       this.cacheService.del(`user/${id}`).catch(e => { });

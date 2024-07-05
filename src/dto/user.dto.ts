@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Language, TranslateResultDto } from "./translate.dto";
-import { IsEmail, IsEnum, IsNotEmpty, IsStrongPassword, MaxLength, MinLength } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsStrongPassword, MaxLength, MinLength } from "class-validator";
 import { IsObjectId } from "class-validator-mongo-object-id";
 
 export enum UserRoles {
@@ -99,14 +99,51 @@ export class RegisterResponseDTO{
     email: string;
 }
 
-export class UpdateUserAboutDTO {
-    @ApiProperty({
-        description: "About of the user",
-        example: "I am a software developer"
+export class UpdateUserDTO {
+    @MinLength(4, {
+        message: "error.register.nameMinlength"
     })
-    @IsNotEmpty()
-    @MaxLength(250)
-    about: string;
+    @MaxLength(50, {
+        message: "error.register.nameMaxlength"
+    })
+    @IsOptional()
+    name?: string;
+
+    @MinLength(4, {
+        message: "error.register.usernameMinlength"
+    })
+    @MaxLength(20, {
+        message: "error.register.usernameMaxlength"
+    })
+    @IsOptional()
+    username?: string;
+
+    @MaxLength(100, {
+        message: "error.register.aboutMaxlength"
+    })
+    @IsOptional()
+    about?: string;
+
+    @MaxLength(20,{
+        message: "error.register.passwordMaxlength"
+    })
+    @IsStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+    },{
+        message: "error.register.passwordWeak"
+    })
+    @IsOptional()
+    password?: string;
+
+    @MaxLength(20,{
+        message: "error.register.passwordMaxlength"
+    })
+    @IsOptional()
+    oldPassword?: string;
 }
 
 export class UpdateUserProfilePictureDTO {
