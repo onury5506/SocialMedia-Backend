@@ -214,6 +214,9 @@ export class MiniUserProfile {
     name: string;
 
     @ApiProperty()
+    username: string;
+
+    @ApiProperty()
     profilePicture: string;
 
     @ApiProperty()
