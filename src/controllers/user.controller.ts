@@ -1,4 +1,4 @@
-import { Body, Controller, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Put, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, FileTypeValidator, Get, HttpException, MaxFileSizeValidator, Param, ParseFilePipe, Post, Put, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Size } from 'src/constants/fileSizeConstans';
@@ -11,6 +11,7 @@ import { JwtGuard } from 'src/guards/jwt.guard';
 import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
+import { ApiOkResponsePaginated } from 'src/decarotors/apiOkResponsePaginated.decorator';
 
 @Controller("/user")
 @ApiTags("User")
@@ -131,8 +132,17 @@ export class UserController {
 
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileInterceptor('file'))
+    @Delete("/me/profilePicture")
+    deleteProfilePicture(@Request() req: RequestWithUser) {
+        return this.userService.deleteUserProfilePicture(req.userId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
     @Get("/followers/:id/:page")
-    @ApiResponse({ status: 200, type: [MiniUserProfile] })
+    @ApiOkResponsePaginated(MiniUserProfile)
     getFollowers(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){
             page = 1;
@@ -144,7 +154,7 @@ export class UserController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/followings/:id/:page")
-    @ApiResponse({ status: 200, type: [MiniUserProfile] })
+    @ApiOkResponsePaginated(MiniUserProfile)
     getFollowings(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
         if(page < 1){
             page = 1;

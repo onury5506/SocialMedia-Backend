@@ -12,6 +12,7 @@ import { CacheService } from './cache.service';
 import { Block } from 'src/schemas/block.schema';
 import { Time } from 'src/constants/timeConstants';
 import { FeedService } from './feed.service';
+import { PaginatedDto } from 'src/decarotors/apiOkResponsePaginated.decorator';
 
 @Injectable()
 export class UserService {
@@ -66,7 +67,7 @@ export class UserService {
       throw new HttpException('updateUser.error.userNotFound', 404);
     }
 
-    if(updateUserAboutDTO.username){
+    if (updateUserAboutDTO.username) {
       const isUsed = await this.userModel.findOne({ username: updateUserAboutDTO.username, _id: { $ne: id } }).exec();
       if (isUsed) {
         throw new HttpException('error.register.usernameAlreadyExists', 400);
@@ -74,19 +75,19 @@ export class UserService {
       user.username = updateUserAboutDTO.username;
     }
 
-    if(updateUserAboutDTO.password && updateUserAboutDTO.oldPassword){
+    if (updateUserAboutDTO.password && updateUserAboutDTO.oldPassword) {
       let oldPasswordMatch = await bcrypt.compare(updateUserAboutDTO.oldPassword, user.password);
       if (!oldPasswordMatch) {
         throw new HttpException('updateUser.error.oldPasswordIncorrect', 400);
       }
-      user.password = await bcrypt.hash(updateUserAboutDTO.password, 10) 
+      user.password = await bcrypt.hash(updateUserAboutDTO.password, 10)
     }
 
-    if(updateUserAboutDTO.name){
+    if (updateUserAboutDTO.name) {
       user.name = updateUserAboutDTO.name;
     }
 
-    if(updateUserAboutDTO.about){
+    if (updateUserAboutDTO.about) {
       user.about = await this.translateService.translateTextToAllLanguages(updateUserAboutDTO.about)
     }
 
@@ -127,12 +128,6 @@ export class UserService {
       throw new HttpException("updateUser.error.somethingWentWrong", 500);
     }
 
-
-
-    if (user.profilePicture) {
-      this.storageService.deleteFile(user.profilePicture).catch(e => { })
-    }
-
     user.profilePicture = path
     try {
       this.cacheService.del(`user/${id}`).catch(e => { });
@@ -143,6 +138,22 @@ export class UserService {
       throw new HttpException("updateUser.error.somethingWentWrong", 500);
     }
 
+  }
+
+  async deleteUserProfilePicture(id: string): Promise<void> {
+    const user = await this.getUserById(id);
+    if (!user) {
+      throw new HttpException('updateUser.error.userNotFound', 404);
+    }
+
+    user.profilePicture = ""
+    try {
+      this.cacheService.del(`user/${id}`).catch(e => { });
+      this.cacheService.del(`userProfilePicture/${id}`).catch(e => { });
+      await user.save();
+    } catch (e) {
+      throw new HttpException("updateUser.error.somethingWentWrong", 500);
+    }
   }
 
   async increasePostCount(id: string, number: number): Promise<void> {
@@ -214,7 +225,7 @@ export class UserService {
     res.following = await this.isFollowing(queryOwnerId, res.id)
   }
 
-  async getFollowers(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+  async getFollowers(queryOwnerId: string, id: string, page: number): Promise<PaginatedDto<MiniUserProfile>> {
     const isBlocked = await this.isBlocked(queryOwnerId, id)
     if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
       throw new HttpException('getFollowers.error.cannotGetFollowersBlockedUser', 400);
@@ -227,11 +238,12 @@ export class UserService {
       .limit(pageSize)
       .exec();
 
-    return await Promise.all(
+    const res: MiniUserProfile[] = await Promise.all(
       followers.map(async f => {
         const res = {
           id: f.follower._id.toHexString(),
           name: f.follower.name,
+          username: f.follower.username,
           profilePicture: f.follower.profilePicture,
           following: false
         }
@@ -244,9 +256,16 @@ export class UserService {
         return res;
       })
     )
+
+    return {
+      data: res,
+      page: page,
+      nextPage: page + 1,
+      hasNextPage: res.length === pageSize
+    }
   }
 
-  async getFollowings(queryOwnerId: string, id: string, page: number): Promise<MiniUserProfile[]> {
+  async getFollowings(queryOwnerId: string, id: string, page: number): Promise<PaginatedDto<MiniUserProfile>> {
     const isBlocked = await this.isBlocked(queryOwnerId, id)
     if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
       throw new HttpException('getFollowings.error.cannotGetFollowingsBlockedUser', 400);
@@ -259,11 +278,12 @@ export class UserService {
       .limit(pageSize)
       .exec();
 
-    return await Promise.all(
+    const res: MiniUserProfile[] = await Promise.all(
       following.map(async f => {
         const res = {
           id: f.following._id.toHexString(),
           name: f.following.name,
+          username: f.following.username,
           profilePicture: f.following.profilePicture,
           following: false
         }
@@ -276,11 +296,18 @@ export class UserService {
         return res;
       })
     )
+
+    return {
+      data: res,
+      page: page,
+      nextPage: page + 1,
+      hasNextPage: res.length === pageSize
+    }
   }
 
   async getFollowingsIds(id: string): Promise<string[]> {
     const following = await this.followModel.find({ follower: id }, { following: 1 }).exec();
-    return following.map(f => f.following+"");
+    return following.map(f => f.following + "");
   }
 
   async followUser(followerId: string, followingId: string): Promise<void> {
