@@ -123,7 +123,8 @@ export class PostService {
                 await post.save()
                 await Promise.all([
                     this.userService.increasePostCount(userId,1),
-                    this.increaseHashtagCountOfPost(post)
+                    this.increaseHashtagCountOfPost(post),
+                    this.cacheService.del(`post/user/${userId}/*`)
                 ])
             } catch (e) {
                 post.postStatus = PostStatus.FAILED
@@ -155,7 +156,8 @@ export class PostService {
             await post.save()
             await Promise.all([
                 this.userService.increasePostCount(userId,1),
-                this.increaseHashtagCountOfPost(post)
+                this.increaseHashtagCountOfPost(post),
+                this.cacheService.del(`post/user/${userId}/*`)
             ])
         } else {
 
@@ -341,7 +343,7 @@ export class PostService {
     }
 
     public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PaginatedDto<PostDataDto>> {
-
+        const pageSize = 18
         const isBlocked = await this.userService.isBlocked(queryOwnerId, userId);
 
         if (isBlocked.user1BlockedUser2 || isBlocked.user2BlockedUser1) {
@@ -359,15 +361,15 @@ export class PostService {
                 data: data,
                 page,
                 nextPage: page + 1,
-                hasNextPage: data.length === 10
+                hasNextPage: data.length === pageSize
             }
         }
 
         const posts = await this.postModel
             .find({ user: userId, deleted: false, postStatus: PostStatus.PUBLISHED }, { _id: 1 })
             .sort({ publishedAt: -1 })
-            .skip((page - 1) * 10)
-            .limit(10)
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
 
         const postIds = posts.map(post => post._id.toHexString())
 
@@ -379,7 +381,7 @@ export class PostService {
             data: data,
             page,
             nextPage: page + 1,
-            hasNextPage: data.length === 10
+            hasNextPage: data.length === pageSize
         }
     }
 
