@@ -14,6 +14,7 @@ import { TranslateResultDto } from 'src/dto/translate.dto';
 import { PostLikeService } from './postLike.service';
 import { UserService } from './user.service';
 import { HashtagService } from './hashtag.service';
+import { PaginatedDto } from 'src/decarotors/apiOkResponsePaginated.decorator';
 
 @Injectable()
 export class PostService {
@@ -339,7 +340,7 @@ export class PostService {
         return Promise.all(postIds.map(postId => this.getPostWithWriterData(queryOwnerId, postId)))
     }
 
-    public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PostDataDto[]> {
+    public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PaginatedDto<PostDataDto>> {
 
         const isBlocked = await this.userService.isBlocked(queryOwnerId, userId);
 
@@ -352,7 +353,14 @@ export class PostService {
         const cachedData = await this.cacheService.get<string[]>(cacheKey)
 
         if (cachedData) {
-            return this.getPostsFromIdList(queryOwnerId, cachedData)
+            const data = await this.getPostsFromIdList(queryOwnerId, cachedData)
+            
+            return {
+                data: data,
+                page,
+                nextPage: page + 1,
+                hasNextPage: data.length === 10
+            }
         }
 
         const posts = await this.postModel
@@ -365,7 +373,14 @@ export class PostService {
 
         await this.cacheService.set(cacheKey, postIds, Time.Hour)
 
-        return this.getPostsFromIdList(queryOwnerId, postIds)
+        const data = await this.getPostsFromIdList(queryOwnerId, postIds)
+
+        return {
+            data: data,
+            page,
+            nextPage: page + 1,
+            hasNextPage: data.length === 10
+        }
     }
 
     public async deletePost(userId: string, postId: string): Promise<void> {

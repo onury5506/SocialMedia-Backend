@@ -1,5 +1,6 @@
 import { Body, Controller, Post, UseGuards, Request, Get, Param, HttpException, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponsePaginated, PaginatedDto } from 'src/decarotors/apiOkResponsePaginated.decorator';
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { CommentDataWithLikedDto, CreateCommentDto } from 'src/dto/comment.dto';
 import { CommentLikeDto, CommentUnlikeDto } from 'src/dto/commentLike.dto';
@@ -59,7 +60,8 @@ export class PostController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/postOf/:userId/:page")
-    async getPostsOfUser(@Request() req: RequestWithUser, @Param("userId") userId: string, @Param("page") page:number): Promise<PostDataDto[]>{
+    @ApiOkResponsePaginated(PostDataDto)
+    async getPostsOfUser(@Request() req: RequestWithUser, @Param("userId") userId: string, @Param("page") page:number): Promise<PaginatedDto<PostDataDto>>{
         if(page < 1){
             page = 1;
         }
