@@ -1,6 +1,6 @@
 import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, mongo } from 'mongoose';
+import mongoose, { Model, mongo } from 'mongoose';
 import { Feed, FeedDocument } from 'src/schemas/feed.schema';
 import { CacheService } from './cache.service';
 import { PostService } from './post.service';
@@ -42,15 +42,25 @@ export class FeedService {
         } else if (page > 100) {
             page = 100
         }
-        
+
         const start = (page - 1) * pageSize
         const end = start + pageSize
 
         const cacheKey = `feed:${owner}`
+
+        if(!await this.cacheService.isExist(cacheKey)) {
+            return {
+                data: [],
+                page: page,
+                nextPage: page+1,
+                hasNextPage: false
+            }
+        }
+
         let posts: string[] = []
-        if(await this.cacheService.isExist(cacheKey)){
+        if (await this.cacheService.isExist(cacheKey)) {
             posts = await this.cacheService.getCachedArraySlice<string>(cacheKey, start, end)
-        }else{
+        } else {
             const feed = await this.getFeedByOwner(owner)
             posts = feed.feed.map(post => post.toHexString())
             await this.cacheService.setArray(cacheKey, posts, Time.Minute * 30)
@@ -69,14 +79,14 @@ export class FeedService {
 
     async updateFeed(owner: string) {
         const feed = await this.feedModel.findOne({ owner }).exec()
-        
+
         const followingPosts = await this.postService.getFollowingPosts(owner, feed.lastDateForFollowing)
 
         /* ToDo followings followings posts */
 
-        let globalPosts = await this.postService.getGlobalPosts(feed.lastDateForGlobal, new Date())
+        let globalPosts = await this.postService.getGlobalPosts(feed.lastDateForGlobal, new Date(), [new mongoose.Types.ObjectId(owner)])
 
-        if(globalPosts.length > 100){
+        if (globalPosts.length > 100) {
             globalPosts = globalPosts.slice(0, 100)
         }
 
@@ -93,7 +103,7 @@ export class FeedService {
 
         await Promise.all([
             feed.save(),
-            this.cacheService.setArray(`feed:${owner}`, posts.map(post => post + ""), Time.Minute * 30)
+            posts.length ? this.cacheService.setArray(`feed:${owner}`, posts.map(post => post + ""), Time.Minute * 30) : this.cacheService.del(`feed:${owner}`)
         ])
     }
 
