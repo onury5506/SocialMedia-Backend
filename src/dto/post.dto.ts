@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Size } from "src/constants/fileSizeConstans";
 import { TranslateResultDto } from "./translate.dto";
 import { IsObjectId } from "class-validator-mongo-object-id";
-import { IsNotEmpty, MinLength, MaxLength, IsEnum } from "class-validator";
+import { IsNotEmpty, MinLength, MaxLength, IsEnum, IsOptional } from "class-validator";
 import { writerDataDto } from "./user.dto";
 
 export enum PostType {
@@ -36,10 +36,9 @@ export const PostMimeTypeToPostType = {
 };
 
 export class CreatePostRequestDto {
-    @IsNotEmpty()
-    @MinLength(1)
-    @MaxLength(500)
-    content: string;
+    @IsOptional()
+    @MaxLength(240)
+    content?: string;
 
     @IsEnum(PostMimeType)
     postMimeType: PostMimeType;
@@ -49,6 +48,7 @@ export class CreatePostRequestDto {
 }
 
 export class CreatePostResponseDto {
+    id: string;
     signedUrl: string;
 }
 
