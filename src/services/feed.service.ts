@@ -7,6 +7,7 @@ import { PostService } from './post.service';
 import { TimeMs, Time } from 'src/constants/timeConstants';
 import { PostDataDto, PostDataWithWriterDto } from 'src/dto/post.dto';
 import { Interval } from '@nestjs/schedule';
+import { PaginatedDto } from 'src/decarotors/apiOkResponsePaginated.decorator';
 
 @Injectable()
 export class FeedService {
@@ -34,7 +35,7 @@ export class FeedService {
         return feed
     }
 
-    async getUserFeedPosts(owner: string, page: number): Promise<PostDataWithWriterDto[]> {
+    async getUserFeedPosts(owner: string, page: number): Promise<PaginatedDto<PostDataWithWriterDto>> {
         const pageSize = 10;
         if (page < 1) {
             page = 1
@@ -56,7 +57,14 @@ export class FeedService {
             posts = posts.slice(start, end)
         }
 
-        return this.postService.getPostsWithWriterFromIdList(owner, posts)
+        const data = await this.postService.getPostsWithWriterFromIdList(owner, posts)
+
+        return {
+            data,
+            page,
+            nextPage: page + 1,
+            hasNextPage: posts.length === pageSize
+        }
     }
 
     async updateFeed(owner: string) {
@@ -129,7 +137,7 @@ export class FeedService {
         }
     }
 
-    async getPagedGlobalFeed(queryOwnerId: string, page: number): Promise<PostDataWithWriterDto[]> {
+    async getPagedGlobalFeed(queryOwnerId: string, page: number): Promise<PaginatedDto<PostDataWithWriterDto>> {
         const pageSize = 10;
         if (page < 1) {
             page = 1
@@ -141,6 +149,13 @@ export class FeedService {
 
         const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end)
 
-        return this.postService.getPostsWithWriterFromIdList(queryOwnerId, cachedFeed)
+        const data = await this.postService.getPostsWithWriterFromIdList(queryOwnerId, cachedFeed)
+
+        return {
+            data,
+            page,
+            nextPage: page + 1,
+            hasNextPage: cachedFeed.length === pageSize
+        }
     }
 }
