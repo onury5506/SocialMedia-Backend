@@ -6,7 +6,8 @@ import { CropAndResizeImageDto, Dimensions, VideoMetadata } from 'src/dto/media.
 import { StorageService } from './storage.service';
 import * as ffmpeg from 'fluent-ffmpeg'
 import { google } from '@google-cloud/video-transcoder/build/protos/protos';
-import { PubSub } from '@google-cloud/pubsub';
+import { encode } from 'blurhash';
+export const bigThumbnailFile = 'bigThumbnail0000000000.jpeg'
 
 @Injectable()
 export class MediaService {
@@ -27,12 +28,27 @@ export class MediaService {
         this.projectId = this.configService.get<string>("GOOGLE_PROJECT_ID")
     }
 
+    async getBlurHash(img: Buffer): Promise<string> {
+        return new Promise((resolve, reject) => {
+            sharp(img).raw().ensureAlpha().toBuffer((err, buffer, { width, height }) => {
+                if (err) {
+                    throw err
+                }
+                return resolve(encode(new Uint8ClampedArray(buffer), width, height, 4, 4))
+            })
+        })
+    }
+
     cropAndResizeImage(request: CropAndResizeImageDto): Promise<Buffer> {
         return sharp(request.file)
             .png()
             .extract({ left: request.left, top: request.top, width: request.width, height: request.height })
             .resize(request.targetWidth, request.targetHeight)
             .toBuffer()
+    }
+
+    resizeImage(img: Buffer, width: number, height: number): Promise<Buffer> {
+        return sharp(img).resize(width, height).toBuffer()
     }
 
     async getImageDimensions(img: Buffer): Promise<Dimensions> {
@@ -62,21 +78,32 @@ export class MediaService {
         const inputParts = inputUri.split("/")
         inputParts.pop()
         let outputUri = inputParts.join("/")
-        if(!outputUri.endsWith("/") && outputUri.length){
+        if (!outputUri.endsWith("/") && outputUri.length) {
             outputUri += "/"
         }
 
         let ratio = videoMetadata.width / videoMetadata.height
         let width = 1280
         let height = Math.round(width / ratio)
-        
-        if(videoMetadata.height > videoMetadata.width) {
+
+        if (videoMetadata.height > videoMetadata.width) {
             height = 1280
             width = Math.round(height * ratio)
         }
 
-        if(width % 2 !== 0) width--
-        if(height % 2 !== 0) height--
+        if (width % 2 !== 0) width--
+        if (height % 2 !== 0) height--
+
+        let bigThumbnailWidth = 1080
+        let bigThumbnailHeight = Math.round(bigThumbnailWidth / ratio)
+
+        if (videoMetadata.height > videoMetadata.width) {
+            bigThumbnailHeight = 1080
+            bigThumbnailWidth = Math.round(bigThumbnailHeight * ratio)
+        }
+
+        if (bigThumbnailWidth % 2 !== 0) bigThumbnailWidth--
+        if (bigThumbnailHeight % 2 !== 0) bigThumbnailHeight--
 
         const elementaryStreams: google.cloud.video.transcoder.v1.IElementaryStream[] = [
             {
@@ -93,7 +120,7 @@ export class MediaService {
             }
         ]
 
-        if(videoMetadata.hasAudio) {
+        if (videoMetadata.hasAudio) {
             elementaryStreams.push({
                 key: "audio-stream",
                 audioStream: {
@@ -107,7 +134,7 @@ export class MediaService {
 
         let editList: google.cloud.video.transcoder.v1.IEditAtom[] | undefined = undefined
 
-        if(videoMetadata.duration > maxVideoDuration) {
+        if (videoMetadata.duration > maxVideoDuration) {
             editList = [
                 {
                     key: "video",
@@ -124,7 +151,7 @@ export class MediaService {
             ]
         }
 
-        return this.transcoderServiceClient.createJob({
+        const job = await this.transcoderServiceClient.createJob({
             parent: this.transcoderServiceClient.locationPath(this.projectId, this.location),
             job: {
                 inputUri: `gs://${this.bucketName}/${inputUri}`,
@@ -139,11 +166,31 @@ export class MediaService {
                         }
                     ],
                     editList,
+                    spriteSheets: [
+                        {
+                            filePrefix: 'bigThumbnail',
+                            spriteHeightPixels: bigThumbnailHeight,
+                            spriteWidthPixels: bigThumbnailWidth,
+                            columnCount: 1,
+                            rowCount: 1,
+                            totalCount: 1,
+                        }
+                    ],
                     pubsubDestination: {
-                        "topic":process.env.GOOGLE_TRANSCODER_PUBSUB_TOPIC_NAME
+                        "topic": process.env.GOOGLE_TRANSCODER_PUBSUB_TOPIC_NAME
                     }
                 }
             }
         })
+
+        return {
+            job: job,
+            videoMetadata: {
+                width,
+                height,
+                bigThumbnailWidth,
+                bigThumbnailHeight
+            }
+        }
     }
 }

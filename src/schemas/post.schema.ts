@@ -38,6 +38,37 @@ export class Post {
 
     @Prop()
     @ApiProperty()
+    width: number;
+
+    @Prop({
+        default: 0
+    })
+    @ApiProperty()
+    height: number;
+
+    @Prop({
+        default: 0
+    })
+    @ApiProperty()
+    ratio: number;
+
+    @Prop({
+        default: ""
+    })
+    @ApiProperty()
+    blurHash: string;
+
+    @Prop({
+        required: false,
+        default: undefined
+    })
+    @ApiProperty()
+    thumbnail?: string;
+
+    @Prop({
+        default: 0
+    })
+    @ApiProperty()
     likes: number;
 
     @Prop()

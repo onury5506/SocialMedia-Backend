@@ -1,5 +1,5 @@
 import { HttpException, Inject, Injectable, Post, forwardRef } from '@nestjs/common';
-import { MediaService } from './media.service';
+import { MediaService, bigThumbnailFile } from './media.service';
 import { PubSubService } from './pubSub.service';
 import { StorageService } from './storage.service';
 import { ConfigService } from '@nestjs/config';
@@ -79,14 +79,23 @@ export class PostService {
 
         if (this.videoTypes.some(type => fileName === type)) {
             try {
-                const transcoderJob = await this.mediaService.transcodeVideo(filePath)
+                const job = await this.mediaService.transcodeVideo(filePath)
+                console.log(job)
+                const transcoderJob = job.job
                 const transcoderJobData: VideoTranscodeTaskData = {
                     userId,
                     postId,
-                    fileName
+                    fileName,
+                    videoMetaData: job.videoMetadata
                 }
                 await this.cacheService.set(`transcoderJob/${transcoderJob[0].name}`, transcoderJobData, Time.Day)
             } catch (e) {
+                console.log(e)
+                const post = await this.postModel.findOne({ _id: postId })
+                if (post) {
+                    post.postStatus = PostStatus.FAILED
+                    await post.save()
+                }
                 this.storageService.deleteFile(filePath).catch(() => { })
             }
         } else if (this.imageTypes.some(type => fileName === type)) {
@@ -108,6 +117,14 @@ export class PostService {
                     height = size
                 }
 
+                let thumbnailWidth = 32
+                let thumbnailHeight = Math.round(thumbnailWidth / ratio)
+
+                if (dimensions.width < dimensions.height) {
+                    thumbnailWidth = Math.round(thumbnailHeight * ratio)
+                    thumbnailHeight = 32
+                }
+
                 const resizedImage = await this.mediaService.cropAndResizeImage({ file, left: 0, top: 0, width: dimensions.width, height: dimensions.height, targetWidth: width, targetHeight: height })
                 let pathParts = filePath.split("/")
                 pathParts.pop()
@@ -120,6 +137,10 @@ export class PostService {
                 post.postStatus = PostStatus.PUBLISHED
                 post.url = path
                 post.publishedAt = new Date()
+                post.blurHash = await this.mediaService.getBlurHash(resizedImage)
+                post.width = width
+                post.height = height
+                post.ratio = ratio
                 await post.save()
                 await Promise.all([
                     this.userService.increasePostCount(userId,1),
@@ -142,7 +163,7 @@ export class PostService {
             return
         }
 
-        const { userId, postId, fileName } = transcoderJobData
+        const { userId, postId, fileName, videoMetaData } = transcoderJobData
 
         const post = await this.postModel.findOne({ _id: postId })
         if (!post) {
@@ -152,7 +173,12 @@ export class PostService {
         if (message.job.state === "SUCCEEDED") {
             post.postStatus = PostStatus.PUBLISHED
             post.url = `${userId}/${postId}/edited_video.mp4`
+            post.thumbnail = `${userId}/${postId}/${bigThumbnailFile}`
+            post.blurHash = await this.mediaService.getBlurHash(await this.storageService.downloadFile(`${userId}/${postId}/${bigThumbnailFile}`))
             post.publishedAt = new Date()
+            post.width = videoMetaData.width
+            post.height = videoMetaData.height
+            post.ratio = videoMetaData.width / videoMetaData.height
             await post.save()
             await Promise.all([
                 this.userService.increasePostCount(userId,1),
@@ -271,6 +297,11 @@ export class PostService {
             postType: post.postType,
             postStatus: post.postStatus,
             content: post.content,
+            blurHash: post.blurHash,
+            thumbnail: this.storageService.signCdnUrl(post.thumbnail, Time.Day + Time.Hour),
+            width: post.width,
+            height: post.height,
+            ratio: post.ratio,
             hashtags: post.hashtags,
             url: this.storageService.signCdnUrl(post.url, Time.Day + Time.Hour),
             publishedAt: post.publishedAt,

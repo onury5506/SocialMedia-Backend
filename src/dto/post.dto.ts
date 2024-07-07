@@ -56,6 +56,12 @@ export class VideoTranscodeTaskData {
     userId: string;
     postId: string;
     fileName: string;
+    videoMetaData: {
+        width: number,
+        height: number,
+        bigThumbnailWidth: number,
+        bigThumbnailHeight: number
+    }
 }
 
 export const MaxHashtags = 3;
@@ -66,6 +72,11 @@ export class PostStaticDataDto {
     postType: PostType;
     postStatus: PostStatus;
     content: TranslateResultDto;
+    blurHash: string;
+    thumbnail?: string;
+    width: number;
+    height: number;
+    ratio: number;
     hashtags: string[];
     url: string;
     publishedAt: Date;
@@ -83,6 +94,11 @@ export class PostDataDto implements PostStaticDataDto, PostDynamicDataDto {
     postType: PostType;
     postStatus: PostStatus;
     content: TranslateResultDto;
+    blurHash: string;
+    thumbnail?: string;
+    width: number;
+    height: number;
+    ratio: number;
     hashtags: string[];
     url: string;
     publishedAt: Date;
