@@ -4,7 +4,7 @@ import { ApiOkResponsePaginated, PaginatedDto } from 'src/decarotors/apiOkRespon
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { CommentDataWithLikedDto, CreateCommentDto } from 'src/dto/comment.dto';
 import { CommentLikeDto, CommentUnlikeDto } from 'src/dto/commentLike.dto';
-import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, PostStatus, ViewPostDto } from 'src/dto/post.dto';
+import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, PostDataWithWriterDto, PostStatus, ViewPostDto } from 'src/dto/post.dto';
 import { PostLikeDto, PostUnlikeDto } from 'src/dto/postLike.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CommentService } from 'src/services/comment.service';
@@ -67,8 +67,8 @@ export class PostController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/postOf/:userId/:page")
-    @ApiOkResponsePaginated(PostDataDto)
-    async getPostsOfUser(@Request() req: RequestWithUser, @Param("userId") userId: string, @Param("page") page:number): Promise<PaginatedDto<PostDataDto>>{
+    @ApiOkResponsePaginated(PostDataWithWriterDto)
+    async getPostsOfUser(@Request() req: RequestWithUser, @Param("userId") userId: string, @Param("page") page:number): Promise<PaginatedDto<PostDataWithWriterDto>>{
         if(page < 1){
             page = 1;
         }

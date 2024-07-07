@@ -377,16 +377,11 @@ export class PostService {
         return post.postStatus
     }
 
-    async getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {
-        const posts = await Promise.all(postIds.map(postId => this.getPost(queryOwnerId, postId).catch(() => null)))
-        return posts.filter(post => post !== null)
-    }
-
     getPostsWithWriterFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataWithWriterDto[]> {
         return Promise.all(postIds.map(postId => this.getPostWithWriterData(queryOwnerId, postId)))
     }
 
-    public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PaginatedDto<PostDataDto>> {
+    public async getPostsOfUser(queryOwnerId: string, userId: string, page: number): Promise<PaginatedDto<PostDataWithWriterDto>> {
         const pageSize = 18
         const isBlocked = await this.userService.isBlocked(queryOwnerId, userId);
 
@@ -399,7 +394,7 @@ export class PostService {
         const cachedData = await this.cacheService.get<string[]>(cacheKey)
 
         if (cachedData) {
-            const data = await this.getPostsFromIdList(queryOwnerId, cachedData)
+            const data = await this.getPostsWithWriterFromIdList(queryOwnerId, cachedData)
             
             return {
                 data: data,
@@ -419,7 +414,7 @@ export class PostService {
 
         await this.cacheService.set(cacheKey, postIds, Time.Hour)
 
-        const data = await this.getPostsFromIdList(queryOwnerId, postIds)
+        const data = await this.getPostsWithWriterFromIdList(queryOwnerId, postIds)
 
         return {
             data: data,

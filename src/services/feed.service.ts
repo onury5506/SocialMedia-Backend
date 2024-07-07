@@ -5,7 +5,7 @@ import { Feed, FeedDocument } from 'src/schemas/feed.schema';
 import { CacheService } from './cache.service';
 import { PostService } from './post.service';
 import { TimeMs, Time } from 'src/constants/timeConstants';
-import { PostDataDto } from 'src/dto/post.dto';
+import { PostDataDto, PostDataWithWriterDto } from 'src/dto/post.dto';
 import { Interval } from '@nestjs/schedule';
 
 @Injectable()
@@ -34,7 +34,7 @@ export class FeedService {
         return feed
     }
 
-    async getUserFeedPosts(owner: string, page: number): Promise<PostDataDto[]> {
+    async getUserFeedPosts(owner: string, page: number): Promise<PostDataWithWriterDto[]> {
         const pageSize = 10;
         if (page < 1) {
             page = 1
@@ -56,7 +56,7 @@ export class FeedService {
             posts = posts.slice(start, end)
         }
 
-        return this.postService.getPostsFromIdList(owner, posts)
+        return this.postService.getPostsWithWriterFromIdList(owner, posts)
     }
 
     async updateFeed(owner: string) {
@@ -129,7 +129,7 @@ export class FeedService {
         }
     }
 
-    async getPagedGlobalFeed(queryOwnerId: string, page: number): Promise<PostDataDto[]> {
+    async getPagedGlobalFeed(queryOwnerId: string, page: number): Promise<PostDataWithWriterDto[]> {
         const pageSize = 10;
         if (page < 1) {
             page = 1
@@ -141,6 +141,6 @@ export class FeedService {
 
         const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end)
 
-        return this.postService.getPostsFromIdList(queryOwnerId, cachedFeed)
+        return this.postService.getPostsWithWriterFromIdList(queryOwnerId, cachedFeed)
     }
 }
