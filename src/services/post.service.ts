@@ -192,7 +192,7 @@ export class PostService {
             throw new HttpException(`File size exceeds the maximum allowed size of ${maxFileSize} bytes`, 400)
         }
 
-        const translatedContent = await this.translateService.translateTextToAllLanguages(createPost.content)
+        const translatedContent = await this.translateService.translateTextToAllLanguages(createPost.content || "")
 
         const hashtags = this.findHastags(translatedContent)
 
@@ -247,7 +247,7 @@ export class PostService {
 
         const signedUrl = await this.storageService.signUrlToUpload(filePath, createPost.postMimeType, createPost.size)
 
-        return { signedUrl }
+        return { id: newPost._id.toHexString() ,signedUrl }
     }
 
     private async getPostStaticData(postId: string): Promise<PostStaticDataDto> {
@@ -331,6 +331,19 @@ export class PostService {
         }
 
         return post
+    }
+
+    public async getPostStatus(postId: string): Promise<PostStatus> {
+        const post = await this.postModel.findOne({
+            _id: postId,
+            deleted: false
+        }, { postStatus: 1 })
+
+        if (!post) {
+            throw new HttpException("Post not found", 404)
+        }
+
+        return post.postStatus
     }
 
     async getPostsFromIdList(queryOwnerId: string, postIds: string[]): Promise<PostDataDto[]> {

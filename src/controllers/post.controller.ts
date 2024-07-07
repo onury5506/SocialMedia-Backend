@@ -4,7 +4,7 @@ import { ApiOkResponsePaginated, PaginatedDto } from 'src/decarotors/apiOkRespon
 import { RequestWithUser } from 'src/dto/auth.dto';
 import { CommentDataWithLikedDto, CreateCommentDto } from 'src/dto/comment.dto';
 import { CommentLikeDto, CommentUnlikeDto } from 'src/dto/commentLike.dto';
-import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, ViewPostDto } from 'src/dto/post.dto';
+import { CreatePostRequestDto, CreatePostResponseDto, PostDataDto, PostStatus, ViewPostDto } from 'src/dto/post.dto';
 import { PostLikeDto, PostUnlikeDto } from 'src/dto/postLike.dto';
 import { JwtGuard } from 'src/guards/jwt.guard';
 import { CommentService } from 'src/services/comment.service';
@@ -55,6 +55,13 @@ export class PostController {
     @Post("/unlike")
     async unlikePost(@Request() req: RequestWithUser, @Body() postUnlikeDto: PostUnlikeDto): Promise<void>{
         return this.postLikeService.unlikePost(req.userId, postUnlikeDto.postId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/postStatus/:postId")
+    async getPostStatus(@Request() req: RequestWithUser, @Param("postId") postId: string): Promise<PostStatus>{
+        return this.postService.getPostStatus(postId);
     }
 
     @UseGuards(JwtGuard)
