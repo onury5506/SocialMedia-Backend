@@ -7,7 +7,7 @@ import { CacheService } from './cache.service';
 import { CreatePostRequestDto, CreatePostResponseDto, MaxHashtags, MaxPostSizes, PostDataDto, PostDataWithWriterDto, PostDynamicDataDto, PostMimeType, PostMimeTypeToPostType, PostStaticDataDto, PostStatus, PostType, VideoTranscodeTaskData } from 'src/dto/post.dto';
 import { TranslateService } from './translate.service';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, mongo } from 'mongoose';
+import mongoose, { Model, mongo } from 'mongoose';
 import { PostDocument, Post as PostModel } from 'src/schemas/post.schema';
 import { Time, TimeMs } from 'src/constants/timeConstants';
 import { TranslateResultDto } from 'src/dto/translate.dto';
@@ -31,7 +31,7 @@ export class PostService {
         private readonly cacheService: CacheService,
         private readonly translateService: TranslateService,
         private readonly postLikeService: PostLikeService,
-        @Inject(forwardRef(()=>UserService)) private readonly userService: UserService,
+        @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
         private readonly hashtagService: HashtagService,
     ) {
         this.whenFileUploaded = this.whenFileUploaded.bind(this);
@@ -143,7 +143,7 @@ export class PostService {
                 post.ratio = ratio
                 await post.save()
                 await Promise.all([
-                    this.userService.increasePostCount(userId,1),
+                    this.userService.increasePostCount(userId, 1),
                     this.increaseHashtagCountOfPost(post),
                     this.cacheService.del(`post/user/${userId}/*`)
                 ])
@@ -181,7 +181,7 @@ export class PostService {
             post.ratio = videoMetaData.width / videoMetaData.height
             await post.save()
             await Promise.all([
-                this.userService.increasePostCount(userId,1),
+                this.userService.increasePostCount(userId, 1),
                 this.increaseHashtagCountOfPost(post),
                 this.cacheService.del(`post/user/${userId}/*`)
             ])
@@ -273,7 +273,7 @@ export class PostService {
 
         const signedUrl = await this.storageService.signUrlToUpload(filePath, createPost.postMimeType, createPost.size)
 
-        return { id: newPost._id.toHexString() ,signedUrl }
+        return { id: newPost._id.toHexString(), signedUrl }
     }
 
     private async getPostStaticData(postId: string): Promise<PostStaticDataDto> {
@@ -396,7 +396,7 @@ export class PostService {
 
         if (cachedData) {
             const data = await this.getPostsWithWriterFromIdList(queryOwnerId, cachedData)
-            
+
             return {
                 data: data,
                 page,
@@ -438,7 +438,7 @@ export class PostService {
             this.cacheService.del(`post/static/${postId}`),
             this.cacheService.del(`post/dynamic/${postId}`),
             this.decreaseHashtagCountOfPost(post),
-            this.userService.increasePostCount(userId,-1)
+            this.userService.increasePostCount(userId, -1)
         ])
     }
 
@@ -499,13 +499,13 @@ export class PostService {
         maxComments: number
     }> {
         const cacheKey = "post/maxCounts"
-        
+
         const cachedData = await this.cacheService.get<{
             maxLikes: number,
             maxViews: number,
             maxComments: number
         }>(cacheKey)
-        
+
         if (cachedData) {
             return cachedData
         }
@@ -538,7 +538,7 @@ export class PostService {
                 maxComments: 1
             }
         }
-        
+
         const maxCount = maxCounts[0]
 
         maxCount.maxLikes = maxCount?.maxLikes || 1
@@ -550,7 +550,7 @@ export class PostService {
         return maxCount
     }
 
-    async getGlobalPosts(startDate: Date, endDate?: Date) {
+    async getGlobalPosts(startDate: Date, endDate?: Date, notFromTheseUsers?: mongoose.Types.ObjectId[]) {
         const { maxLikes, maxComments, maxViews } = await this.getMaxLikeViewAndCommentCount()
 
         const matchCriteria: any = {
@@ -567,6 +567,9 @@ export class PostService {
                 $lt: new Date(endDate),
             };
         }
+        if (notFromTheseUsers) {
+            matchCriteria.user = { $nin: notFromTheseUsers };
+        }
 
         const posts: {
             _id: mongo.ObjectId;
@@ -580,6 +583,10 @@ export class PostService {
                     normalizedViews: { $divide: ['$views', maxViews] },
                     normalizedComments: { $divide: ['$comments', maxComments] },
                     daysSincePublished: { $divide: [{ $subtract: [new Date(), '$publishedAt'] }, 86400000] },
+                },
+            },
+            {
+                $addFields: {
                     recencyWeight: {
                         $max: [
                             0,
@@ -595,7 +602,11 @@ export class PostService {
                                 ],
                             },
                         ],
-                    },
+                    }
+                }
+            },
+            {
+                $addFields: {
                     weight: {
                         $add: [
                             { $multiply: ['$normalizedLikes', 0.35] },
@@ -603,8 +614,8 @@ export class PostService {
                             { $multiply: ['$normalizedComments', 0.10] },
                             { $multiply: ['$recencyWeight', 0.40] }
                         ],
-                    },
-                },
+                    }
+                }
             },
             {
                 $sort: { weight: -1 },
@@ -645,8 +656,8 @@ export class PostService {
                 }
             },
             {
-                $sort: { 
-                    publishedAt: -1 
+                $sort: {
+                    publishedAt: -1
                 }
             },
             {
