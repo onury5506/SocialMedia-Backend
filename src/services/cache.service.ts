@@ -26,7 +26,7 @@ export class CacheService {
     public setArray(key: string, value: any[], expire?: number): Promise<any> {
         return this.client
             .del(key).then(
-                () => this.client.lPush(key, value.map(v => JSON.stringify(v)))
+                () => this.client.rPush(key, value.map(v => JSON.stringify(v)))
             ).then(() => {
                 if (expire) {
                     return this.client.expire(key, expire);
