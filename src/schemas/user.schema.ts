@@ -32,6 +32,14 @@ export class User {
     @ApiProperty()
     profilePicture: string;
 
+    @Prop({
+        type: String,
+        default: "",
+        required: false
+    })
+    @ApiProperty()
+    profilePictureBlurhash?: string;
+
     @Prop()
     @ApiProperty()
     about: TranslateResultDto;

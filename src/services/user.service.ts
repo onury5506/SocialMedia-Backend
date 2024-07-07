@@ -57,7 +57,8 @@ export class UserService {
       id: user.id,
       name: user.name,
       username: user.username,
-      profilePicture: user.profilePicture
+      profilePicture: user.profilePicture,
+      profilePictureBlurhash: user.profilePictureBlurhash
     }
   }
 
@@ -129,6 +130,14 @@ export class UserService {
     }
 
     user.profilePicture = path
+
+    try{
+      const profilePictureBlurhash = await this.mediaService.getBlurHash(image)
+      user.profilePictureBlurhash = profilePictureBlurhash
+    }catch(e){
+
+    }
+    
     try {
       this.cacheService.del(`user/${id}`).catch(e => { });
       this.cacheService.del(`userProfilePicture/${id}`).catch(e => { });
@@ -181,6 +190,7 @@ export class UserService {
       username: res.username,
       about: res.about,
       profilePicture: await this.getUserProfilePicture(id),
+      profilePictureBlurhash: res.profilePictureBlurhash,
       followerCount: res.followerCount,
       followingCount: res.followingCount,
       postCount: res.postCount,

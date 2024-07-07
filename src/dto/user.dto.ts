@@ -189,6 +189,9 @@ export class UserProfileDTO {
     profilePicture: string;
 
     @ApiProperty()
+    profilePictureBlurhash?: string;
+
+    @ApiProperty()
     followerCount: number;
 
     @ApiProperty()
@@ -228,6 +231,7 @@ export class writerDataDto {
     name: string;
     username: string;
     profilePicture: string;
+    profilePictureBlurhash: string;
 }
 
 export class FollowUserDTO {
