@@ -401,7 +401,7 @@ export class PostService {
                 data: data,
                 page,
                 nextPage: page + 1,
-                hasNextPage: data.length === pageSize
+                hasNextPage: data.length >= pageSize
             }
         }
 
@@ -421,7 +421,7 @@ export class PostService {
             data: data,
             page,
             nextPage: page + 1,
-            hasNextPage: data.length === pageSize
+            hasNextPage: data.length >= pageSize
         }
     }
 
