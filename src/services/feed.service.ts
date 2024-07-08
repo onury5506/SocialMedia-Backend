@@ -153,11 +153,11 @@ export class FeedService {
     }
 
     async getPagedGlobalFeed(queryOwnerId: string, page: number): Promise<PaginatedDto<PostDataWithWriterDto>> {
-        const pageSize = 10;
+        const pageSize = 30;
         if (page < 1) {
             page = 1
-        } else if (page > 200) {
-            page = 200
+        } else if (page > 67) {
+            page = 67
         }
         const start = (page - 1) * pageSize
         const end = start + pageSize
