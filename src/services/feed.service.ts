@@ -59,7 +59,7 @@ export class FeedService {
 
         let posts: string[] = []
         if (await this.cacheService.isExist(cacheKey)) {
-            posts = await this.cacheService.getCachedArraySlice<string>(cacheKey, start, end)
+            posts = await this.cacheService.getCachedArraySlice<string>(cacheKey, start, end-1)
         } else {
             const feed = await this.getFeedByOwner(owner)
             posts = feed.feed.map(post => post.toHexString())
@@ -73,7 +73,7 @@ export class FeedService {
             data,
             page,
             nextPage: page + 1,
-            hasNextPage: posts.length === pageSize
+            hasNextPage: posts.length >= pageSize
         }
     }
 
@@ -123,7 +123,6 @@ export class FeedService {
         return feed
     }
 
-    @Interval(TimeMs.Hour)
     async createGlobalFeed() {
         try {
             let endDate = new Date()
@@ -142,6 +141,12 @@ export class FeedService {
             }
 
             await this.cacheService.setArray(this.globalFeedCacheKey, posts)
+
+            setTimeout(() => {
+                this.createGlobalFeed().then(() => {
+                    console.log('Global feed created')
+                })
+            }, TimeMs.Minute * 20)
         } catch (e) {
             console.error("Something went wrong while creating global feed!", e)
         }
@@ -157,15 +162,15 @@ export class FeedService {
         const start = (page - 1) * pageSize
         const end = start + pageSize
 
-        const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end)
+        const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end-1)
 
         const data = await this.postService.getPostsWithWriterFromIdList(queryOwnerId, cachedFeed)
-
+        
         return {
             data,
             page,
             nextPage: page + 1,
-            hasNextPage: cachedFeed.length === pageSize
+            hasNextPage: cachedFeed.length >= pageSize
         }
     }
 }
