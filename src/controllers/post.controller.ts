@@ -78,7 +78,8 @@ export class PostController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/comments/:post/:page")
-    async getComments(@Request() req: RequestWithUser, @Param("post") post: string, @Param("page") page: number): Promise<CommentDataWithLikedDto[]>{
+    @ApiOkResponsePaginated(CommentDataWithLikedDto)
+    async getComments(@Request() req: RequestWithUser, @Param("post") post: string, @Param("page") page: number): Promise<PaginatedDto<CommentDataWithLikedDto>>{
         if(page < 1){
             page = 1;
         }

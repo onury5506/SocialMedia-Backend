@@ -11,6 +11,7 @@ import { Time } from 'src/constants/timeConstants';
 import { TranslateService } from './translate.service';
 import { UserDocument } from 'src/schemas/user.schema';
 import { CommentLikeService } from './commentLike.service';
+import { PaginatedDto } from 'src/decarotors/apiOkResponsePaginated.decorator';
 
 @Injectable()
 export class CommentService {
@@ -177,14 +178,19 @@ export class CommentService {
         return Promise.all(commentIds.map(commentId => this.getComment(queryOwnerId, commentId)));
     }
 
-    async getCommentsOfPost(queryOwnerId: string, postId: string, page: number): Promise<CommentDataWithLikedDto[]> {
+    async getCommentsOfPost(queryOwnerId: string, postId: string, page: number): Promise<PaginatedDto<CommentDataWithLikedDto>> {
         const limit = 20;
         const cacheKey = `post/comments/${postId}/${page}`;
 
         const cacheData = await this.cacheService.get<string[]>(cacheKey);
 
         if (cacheData) {
-            return this.getCommentsFromIdList(queryOwnerId, cacheData);
+            return {
+                data: await this.getCommentsFromIdList(queryOwnerId, cacheData),
+                page,
+                nextPage: page+1,
+                hasNextPage: cacheData.length >= limit
+            }
         }
 
         const comments = await this.commentModel.find({
@@ -197,6 +203,11 @@ export class CommentService {
 
         await this.cacheService.set(cacheKey, commentIds, Time.Hour);
 
-        return this.getCommentsFromIdList(queryOwnerId, commentIds);
+        return {
+            data: await this.getCommentsFromIdList(queryOwnerId, commentIds),
+            page,
+            nextPage: page+1,
+            hasNextPage: commentIds.length >= limit
+        }
     }
 }
