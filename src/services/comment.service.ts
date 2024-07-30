@@ -101,6 +101,7 @@ export class CommentService {
                     id: writer.id,
                     name: writer.name,
                     profilePicture: writer.profilePicture,
+                    profilePictureBlurhash: writer.profilePictureBlurhash,
                     username: writer.username
                 }
 
@@ -126,6 +127,7 @@ export class CommentService {
                 id: comment.writer._id.toHexString(),
                 name: (comment.writer as UserDocument).name,
                 profilePicture: await this.userService.getUserProfilePicture(comment.writer._id.toHexString()),
+                profilePictureBlurhash: (comment.writer as UserDocument).profilePictureBlurhash,
                 username: (comment.writer as UserDocument).username
             },
             post: (comment.post as Types.ObjectId).toHexString(),

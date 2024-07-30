@@ -19,6 +19,7 @@ export class CommentWriterDto {
     id: string;
     username: string;
     profilePicture: string;
+    profilePictureBlurhash: string;
     name: string;
 }
 
