@@ -89,7 +89,7 @@ export class PostController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Post("/comment")
-    commentPost(@Request() req: RequestWithUser, @Body() body: CreateCommentDto): Promise<void>{
+    commentPost(@Request() req: RequestWithUser, @Body() body: CreateCommentDto): Promise<CommentDataWithLikedDto>{
         return this.commentService.createComment(req.userId, body);
     }
 

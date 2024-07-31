@@ -34,7 +34,7 @@ export class CommentService {
         ]).then(() => { });
     }
 
-    async createComment(userId: string, createCommentDto: CreateCommentDto) {
+    async createComment(userId: string, createCommentDto: CreateCommentDto): Promise<CommentDataWithLikedDto> {
         const post = await this.postService.getPost(userId, createCommentDto.postId);
 
         if (!post) {
@@ -67,6 +67,8 @@ export class CommentService {
             this.cacheService.del(`post/dynamic/${createCommentDto.postId}`),
             this.cacheService.del(`post/comments/${comment.post}/*`)
         ]);
+
+        return this.getComment(userId, comment._id.toHexString());
     }
 
     async getCommentDynamicData(commentId: string): Promise<CommentDynamicDataDto> {
