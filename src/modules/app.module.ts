@@ -11,6 +11,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PostModule } from './post.module';
 import { HashtagModule } from './hashtag.module';
 import { FeedModule } from './feed.module';
+import { SocketModule } from './socket.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FeedModule } from './feed.module';
     PostModule,
     HashtagModule,
     FeedModule,
+    SocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],
