@@ -9,14 +9,14 @@ import { ChatRoomType } from "src/dto/chat.dto";
 })
 export class ChatRoom {
     @Prop({
-        type: mongoose.Schema.Types.ObjectId,
+        type: [mongoose.Schema.Types.ObjectId],
         ref: User.name
     })
     @ApiProperty()
     members:  mongoose.Schema.Types.ObjectId[];
 
     @Prop({
-        type: mongoose.Schema.Types.ObjectId,
+        type: [mongoose.Schema.Types.ObjectId],
         ref: User.name
     })
     @ApiProperty()
@@ -28,7 +28,7 @@ export class ChatRoom {
 
     @Prop()
     @ApiProperty()
-    roomName: string;
+    roomName?: string;
 
     @Prop()
     @ApiProperty()
@@ -36,7 +36,7 @@ export class ChatRoom {
 
     @Prop()
     @ApiProperty()
-    roomImagePath: string;
+    roomImagePath?: string;
 
     @Prop()
     @ApiProperty()
@@ -51,5 +51,7 @@ export type ChatRoomDocument = HydratedDocument<ChatRoom>
 
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
 
+ChatRoomSchema.index({ _id: 1, members: 1 });
+ChatRoomSchema.index({ members: 1, roomType: 1 });
 ChatRoomSchema.index({ members: 1, lastMessageDate: -1 });
 ChatRoomSchema.index({ members: 1, lastMessageDate: -1, roomType: 1 });

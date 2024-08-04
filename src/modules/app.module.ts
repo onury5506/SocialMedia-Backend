@@ -12,6 +12,7 @@ import { PostModule } from './post.module';
 import { HashtagModule } from './hashtag.module';
 import { FeedModule } from './feed.module';
 import { SocketModule } from './socket.module';
+import { ChatModule } from './chat.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SocketModule } from './socket.module';
     HashtagModule,
     FeedModule,
     SocketModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

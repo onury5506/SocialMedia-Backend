@@ -8,6 +8,7 @@ import { SocketModule } from './socket.module';
 import { ChatController } from 'src/controllers/chat.controller';
 import { ChatService } from 'src/services/chat.service';
 import { UserModule } from './user.module';
+import { TranslateModule } from './translate.modulte';
 
 @Module({
     imports: [
@@ -18,9 +19,10 @@ import { UserModule } from './user.module';
         SocketModule,
         StorageModule,
         PubSubModule,
+        TranslateModule,
         forwardRef(() => UserModule),
     ],
     controllers: [ChatController],
     providers: [ChatService]
 })
-export class PostModule { }
+export class ChatModule { }
