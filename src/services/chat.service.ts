@@ -139,9 +139,19 @@ export class ChatService {
     }
 
     public async getLastMessage(userId: string, roomId: string): Promise<ChatMessageDocument | null> {
+
+        const room = await this.chatRoomModel.findOne({
+            _id: roomId,
+            members: userId
+        })
+
+        if(!room){
+            return null
+        }
+
         const message = await this.chatMessageModel.findOne({
-            members: userId,
-            chatRoom: roomId
+            chatRoom: new mongoose.Types.ObjectId(roomId),
+            messageStatus: ChatMessageStatus.SENT
         }).sort({
             publishedAt: -1
         })
@@ -177,8 +187,8 @@ export class ChatService {
         }
 
         const newMessage: ChatMessage = {
-            chatRoom: new mongoose.Schema.Types.ObjectId(request.roomId),
-            sender: new mongoose.Schema.Types.ObjectId(senderId),
+            chatRoom: new mongoose.Types.ObjectId(request.roomId),
+            sender: new mongoose.Types.ObjectId(senderId),
             messageType: ChatMessageType.TEXT,
             messageStatus: ChatMessageStatus.PENDING,
             publishedAt: new Date("1900-01-01T00:00:00.000Z"),
