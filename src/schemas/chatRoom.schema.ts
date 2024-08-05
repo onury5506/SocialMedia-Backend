@@ -13,14 +13,14 @@ export class ChatRoom {
         ref: User.name
     })
     @ApiProperty()
-    members:  mongoose.Schema.Types.ObjectId[];
+    members:   User[] | mongoose.Types.ObjectId[];
 
     @Prop({
         type: [mongoose.Schema.Types.ObjectId],
         ref: User.name
     })
     @ApiProperty()
-    admins:  mongoose.Schema.Types.ObjectId[];
+    admins:  User[] | mongoose.Types.ObjectId[];
 
     @Prop()
     @ApiProperty()
