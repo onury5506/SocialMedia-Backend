@@ -48,7 +48,7 @@ export class ChatController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Get("/message/last/:chatRoomId")
-    @ApiOkResponsePaginated(ChatRoomDto)
+    @ApiResponse({ status: 200, type: ChatMessageDto })
     async getLastMessage(@Request() req: RequestWithUser, @Param("chatRoomId") chatRoomId: string): Promise<ChatMessageDocument | null> {
         return this.chatService.getLastMessage(req.userId, chatRoomId)
     }
@@ -64,7 +64,7 @@ export class ChatController {
     @UseGuards(JwtGuard)
     @ApiBearerAuth("JwtGuard")
     @Post("/message")
-    @ApiResponse({ status: 200, type: ChatRoomDto })
+    @ApiResponse({ status: 200, type: ChatMessageDto })
     async sendChatMessage(@Request() req: RequestWithUser, @Body() message : ChatMessageSendDto): Promise<ChatMessageDocument> {
         return this.chatService.sendMessage(req.userId, message)
     }
