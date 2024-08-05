@@ -2,6 +2,7 @@ import { IsNotEmpty, MinLength, MaxLength, IsEnum, IsOptional } from "class-vali
 import mongoose from "mongoose";
 import { ChatMessage } from "src/schemas/chatMessage.schema";
 import { ChatRoom } from "src/schemas/chatRoom.schema";
+import { TranslateResultDto } from "./translate.dto";
 
 export enum ChatRoomType {
     PRIVATE = 'private',
@@ -52,7 +53,7 @@ export class ChatMessageDto {
     sender: string;
     messageType: ChatMessageType;
     messageStatus: ChatMessageStatus;
-    content?: string;
+    content?: TranslateResultDto;
     publishedAt: Date;
     createdAt?: Date;
     updatedAt?: Date;
