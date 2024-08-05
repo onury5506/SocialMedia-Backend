@@ -15,14 +15,14 @@ export class ChatMessage {
         ref: ChatRoom.name
     })
     @ApiProperty()
-    chatRoom:  mongoose.Schema.Types.ObjectId;
+    chatRoom:  User | mongoose.Types.ObjectId;
 
     @Prop({
         type: mongoose.Schema.Types.ObjectId,
         ref: User.name
     })
     @ApiProperty()
-    sender:  mongoose.Schema.Types.ObjectId;
+    sender:  User | mongoose.Types.ObjectId;
 
     @Prop()
     @ApiProperty()
