@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { ChatMessage } from "src/schemas/chatMessage.schema";
 import { ChatRoom } from "src/schemas/chatRoom.schema";
 import { TranslateResultDto } from "./translate.dto";
+import { IsObjectId } from "class-validator-mongo-object-id";
 
 export enum ChatRoomType {
     PRIVATE = 'private',
@@ -18,11 +19,12 @@ export enum ChatMessageType {
 export enum ChatMessageStatus {
     PENDING = 'pending',
     SENT = 'sent',
-    DELETED = 'deleted'
+    DELETED = 'deleted',
+    ERROR = 'error',
 }
 
 export class ChatMessageSendDto {
-    @MaxLength(50)
+    @IsObjectId()
     roomId: string;
     type: ChatMessageType;
     @IsOptional()
