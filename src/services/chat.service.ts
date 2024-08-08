@@ -40,7 +40,10 @@ export class ChatService {
         const skip = (page - 1) * pageSize
 
         const rooms = await this.chatRoomModel.find({
-            members: userId
+            members: userId,
+            lastMessageDate: {
+                $ne: new Date("1900-01-01T00:00:00.000Z")
+            }
         }).sort({
             lastMessageDate: -1
         }).skip(skip).limit(pageSize)
