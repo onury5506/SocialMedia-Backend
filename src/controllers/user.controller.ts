@@ -12,6 +12,7 @@ import { CacheInterceptor } from 'src/inspector/cache.inspector';
 import { User } from 'src/schemas/user.schema';
 import { UserService } from 'src/services/user.service';
 import { ApiOkResponsePaginated } from 'src/decarotors/apiOkResponsePaginated.decorator';
+import escapeStringRegexp from 'src/helpers/escapeStringRegexp';
 
 @Controller("/user")
 @ApiTags("User")
@@ -144,7 +145,7 @@ export class UserController {
     @Get("/followers/:id/:page")
     @ApiOkResponsePaginated(MiniUserProfile)
     getFollowers(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
-        if(page < 1){
+        if (page < 1) {
             page = 1;
         }
 
@@ -156,7 +157,7 @@ export class UserController {
     @Get("/followings/:id/:page")
     @ApiOkResponsePaginated(MiniUserProfile)
     getFollowings(@Request() req: RequestWithUser, @Param("id") id: string, @Param("page") page: number) {
-        if(page < 1){
+        if (page < 1) {
             page = 1;
         }
 
@@ -201,5 +202,15 @@ export class UserController {
     @ApiResponse({ status: 200, type: IsBlockedDTO })
     isBlocked(@Request() req: RequestWithUser, @Param("userId") userId: string): Promise<IsBlockedDTO> {
         return this.userService.isBlocked(req.userId, userId);
+    }
+
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth("JwtGuard")
+    @Get("/search/:query")
+    @ApiResponse({ status: 200, type: [MiniUserProfile] })
+    async searchHashtag(@Request() req: RequestWithUser, @Param("query") query: string): Promise<MiniUserProfile[]> {
+        const escapedQuery = escapeStringRegexp(query);
+        const users = await this.userService.searchUsers(req.userId, new RegExp("^" + escapedQuery + ".*"));
+        return users
     }
 }

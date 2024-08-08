@@ -223,6 +223,9 @@ export class MiniUserProfile {
     profilePicture: string;
 
     @ApiProperty()
+    profilePictureBlurhash: string;
+
+    @ApiProperty()
     following: boolean;
 }
 

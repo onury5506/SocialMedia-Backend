@@ -47,6 +47,69 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
+  async searchUsers(queryOwnerId: string, query: RegExp | string): Promise<MiniUserProfile[]> {
+    console.log(query)
+    let res = await this.userModel.aggregate([
+      {
+        $match: {
+          $or: [
+            { username: { $regex: query, $options: 'i' } },
+            { name: { $regex: query, $options: 'i' } }
+          ],
+          _id: { $ne: new mongoose.Types.ObjectId(queryOwnerId) }
+        }
+      },
+      {
+        $lookup: {
+          from: 'follows',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$following', '$$userId'] },
+                    { $eq: ['$follower', new mongoose.Types.ObjectId(queryOwnerId)] }
+                  ]
+                }
+              }
+            },
+            {
+              $project: { _id: 1 }
+            }
+          ],
+          as: 'followInfo'
+        }
+      },
+      {
+        $addFields: {
+          following: { $gt: [{ $size: '$followInfo' }, 0] },
+        }
+      },
+      {
+        $sort: { following: -1 }
+      },
+      {
+        $limit: 20
+      },
+      {
+        $project: {
+          id: '$_id',
+          name: 1,
+          username: 1,
+          profilePicture: 1,
+          profilePictureBlurhash: 1,
+          following: 1
+        }
+      }
+    ]);
+
+    return Promise.all(res.map(async r => {
+      r.profilePicture = await this.getUserProfilePicture(r._id)
+      return r
+    }))
+  }
+
   async getWriterData(id: string): Promise<writerDataDto> {
     const user = await this.getUserProfileById(id);
     if (!user) {
@@ -255,6 +318,7 @@ export class UserService {
           name: f.follower.name,
           username: f.follower.username,
           profilePicture: f.follower.profilePicture,
+          profilePictureBlurhash: f.follower.profilePictureBlurhash,
           following: false
         }
 
@@ -295,6 +359,7 @@ export class UserService {
           name: f.following.name,
           username: f.following.username,
           profilePicture: f.following.profilePicture,
+          profilePictureBlurhash: f.follower.profilePictureBlurhash,
           following: false
         }
 
