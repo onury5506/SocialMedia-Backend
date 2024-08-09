@@ -278,7 +278,7 @@ export class UserService {
       throw new HttpException('findUser.error.userNotFound', 404);
     }
 
-    const profilePicture = res.profilePicture ? await this.storageService.signCdnUrl(res.profilePicture, Time.Day) : "";
+    const profilePicture = res.profilePicture ? await this.storageService.signCdnUrl(res.profilePicture, 3 * Time.Day) : "";
     this.cacheService.set(cacheKey, profilePicture, Time.Day).catch(e => { });
 
     return profilePicture;

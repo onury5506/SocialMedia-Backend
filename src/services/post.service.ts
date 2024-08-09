@@ -298,12 +298,12 @@ export class PostService {
             postStatus: post.postStatus,
             content: post.content,
             blurHash: post.blurHash,
-            thumbnail: this.storageService.signCdnUrl(post.thumbnail, Time.Day + Time.Hour),
+            thumbnail: this.storageService.signCdnUrl(post.thumbnail, Time.Day * 3),
             width: post.width,
             height: post.height,
             ratio: post.ratio,
             hashtags: post.hashtags,
-            url: this.storageService.signCdnUrl(post.url, Time.Day + Time.Hour),
+            url: this.storageService.signCdnUrl(post.url, Time.Day * 3),
             publishedAt: post.publishedAt,
         }
 
