@@ -126,7 +126,7 @@ export class FeedService {
     async createGlobalFeed() {
         try {
             let endDate = new Date()
-            let startDate = new Date(endDate.getTime() - TimeMs.Week)
+            let startDate = new Date(endDate.getTime() - 4*TimeMs.Week)
             let posts: mongo.ObjectId[] = []
 
             for (let i = 0; posts.length < 2000 && i < 4; i++) {
@@ -163,7 +163,6 @@ export class FeedService {
         const end = start + pageSize
 
         const cachedFeed = await this.cacheService.getCachedArraySlice<string>(this.globalFeedCacheKey, start, end-1)
-
         const data = await this.postService.getPostsWithWriterFromIdList(queryOwnerId, cachedFeed)
         
         return {
