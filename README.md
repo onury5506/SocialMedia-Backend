@@ -6,7 +6,7 @@ A powerful, scalable backend for a multilingual, media-rich social media platfor
 
 ## 🙌 Acknowledgments
 
-Special thanks to [gyizem](https://github.com/gyizem) for their invaluable contributions and support in developing this project! 🎉
+Co-author [gyizem](https://github.com/gyizem)
 
 ---
 
